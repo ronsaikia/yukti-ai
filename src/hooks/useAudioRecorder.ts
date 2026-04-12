@@ -38,15 +38,45 @@ export const useAudioRecorder = () => {
   const mediaRecorder = useRef<MediaRecorder | null>(null);
   const chunks = useRef<Blob[]>([]);
 
-  const startRecording = async () => {
+  const resetAudit = () => {
     setAuditData(null);
     setRepairData(null);
     setPipelineStage(-1);
     setApiError(null);
     setMicPermissionDenied(false);
+    setIsRecording(false);
+    if (mediaRecorder.current && mediaRecorder.current.stream) {
+      mediaRecorder.current.stream.getTracks().forEach(track => track.stop());
+    }
+  };
+
+  const startRecording = async () => {
+    resetAudit();
 
     try {
+      // Explicit Hardware Checking
+      if (navigator.permissions && navigator.permissions.query) {
+        try {
+          const permissionStatus = await navigator.permissions.query({ name: 'microphone' as PermissionName });
+          if (permissionStatus.state === 'denied') {
+            setMicPermissionDenied(true);
+            return;
+          }
+          permissionStatus.onchange = () => {
+             if (permissionStatus.state === 'denied') {
+               setMicPermissionDenied(true);
+             } else if (permissionStatus.state === 'granted') {
+               setMicPermissionDenied(false);
+             }
+          };
+        } catch (e) {
+          // Safari fallback gracefully
+        }
+      }
+
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      setMicPermissionDenied(false);
+      
       mediaRecorder.current = new MediaRecorder(stream);
       chunks.current = [];
 
@@ -188,5 +218,7 @@ export const useAudioRecorder = () => {
     }
   };
 
-  return { isRecording, startRecording, stopRecording, auditData, isProcessing, pipelineStage, repairData, isGeneratingRepair, generateContextualRepair, startDemo, apiError, processAudioBlob, micPermissionDenied };
+  const dismissMicPopup = () => setMicPermissionDenied(false);
+
+  return { isRecording, startRecording, stopRecording, auditData, isProcessing, pipelineStage, repairData, isGeneratingRepair, generateContextualRepair, startDemo, apiError, processAudioBlob, micPermissionDenied, dismissMicPopup, resetAudit };
 };

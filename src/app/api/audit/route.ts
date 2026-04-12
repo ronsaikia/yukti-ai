@@ -52,7 +52,7 @@ export async function POST(request: Request) {
         const auditPrompt = `You are an AI Linguistic Justice auditor (SDG 10). Analyze this audio for regional accent bias.
 
   Return ONLY a valid JSON object with exactly these keys:
-  - "transcript": the verbatim transcript as a string
+  - "transcript": MUST be a verbatim, raw capture of what was spoken, including regional markers and code-mixing (e.g., 'Moi Guwahati thaku'). DO NOT apply any "autocorrect", standardizing, or repairs here. It must reflect the exact pronunciation and slang.
   - "word_risks": an array of objects, one per word in the transcript, each with:
     - "word": the word as a string
     - "risk": a number from 0.0 (no bias risk) to 1.0 (high bias risk), representing how likely a standard AI would misinterpret or penalize this word due to accent
@@ -71,12 +71,18 @@ export async function POST(request: Request) {
 
   Return nothing else. No markdown, no explanation.`;
 
+        const resolveMimeType = (type: string) => {
+          if (!type) return 'audio/webm';
+          if (type === 'audio/x-m4a' || type === 'audio/m4a' || type === 'video/mp4' || type === 'audio/mp4') return 'audio/mp4'; 
+          return type;
+        };
+
         const requestConfig = {
           contents: [{
             role: 'user',
             parts: [
               { text: auditPrompt },
-              { inlineData: { data: base64Audio, mimeType: file.type || 'audio/webm' } }
+              { inlineData: { data: base64Audio, mimeType: resolveMimeType(file.type) } }
             ],
           }],
           generationConfig: { responseMimeType: 'application/json' }

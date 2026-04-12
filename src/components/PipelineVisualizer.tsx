@@ -114,7 +114,8 @@ export function PipelineVisualizer({ isProcessing, isComplete, currentStage }: P
         </div>
 
         {/* Pipeline */}
-        <div className="relative flex items-center justify-between px-2">
+        <div className="w-full overflow-x-auto pb-6 -mx-4 px-4 sm:mx-0 sm:px-0" style={{ WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none' }}>
+          <div className="relative flex items-center justify-between px-2 min-w-[560px] mx-auto">
 
           {/* Connector lines behind nodes */}
           <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 flex items-center 
@@ -243,6 +244,7 @@ export function PipelineVisualizer({ isProcessing, isComplete, currentStage }: P
               </div>
             );
           })}
+          </div>
         </div>
 
         {/* Status text */}

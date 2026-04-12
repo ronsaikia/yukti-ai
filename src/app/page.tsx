@@ -325,11 +325,11 @@ function EquityReport({ auditData }: { auditData: any }) {
     >
       {/* Report header — Image 1 */}
       <div style={{ marginBottom: 32, paddingBottom: 24, borderBottom: '1px solid var(--border)' }}>
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
-          <div>
+        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'flex-start', justifyContent: 'space-between', gap: 24 }}>
+          <div style={{ flex: '1 1 min-content' }}>
             <h2 style={{
               fontFamily: 'var(--font-serif)',
-              fontSize: 42,
+              fontSize: 'clamp(32px, 8vw, 42px)',
               fontWeight: 400,
               color: 'var(--text-primary)',
               letterSpacing: '-0.02em',
@@ -338,20 +338,21 @@ function EquityReport({ auditData }: { auditData: any }) {
             }}>
               Equity Report
             </h2>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-secondary)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-              <span>Audio recorded</span>
+            <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', columnGap: 12, rowGap: 8, fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-secondary)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+              <span style={{ whiteSpace: 'nowrap' }}>Audio recorded</span>
               <span style={{ color: 'var(--border)' }}>·</span>
-              <span>Dialect: {auditData.audit?.accent_identified?.split('/')[0]?.trim() || 'Regional English'}</span>
+              <span style={{ whiteSpace: 'nowrap' }}>Dialect: {auditData.audit?.accent_identified?.split('/')[0]?.trim() || 'Regional English'}</span>
               <span style={{ color: 'var(--border)' }}>·</span>
-              <span>Model: Vertex AI + Gemini</span>
+              <span style={{ whiteSpace: 'nowrap' }}>Model: Vertex AI + Gemini</span>
             </div>
           </div>
           <div style={{
             fontFamily: 'var(--font-mono)',
             fontSize: 10,
             color: 'var(--text-secondary)',
-            textAlign: 'right',
+            textAlign: 'left',
             letterSpacing: '0.05em',
+            whiteSpace: 'nowrap',
           }}>
             <div>SESSION ID</div>
             <div style={{ color: 'var(--text-primary)', marginTop: 4 }}>YUK-{Math.floor(1000 + Math.random() * 9000)}-A</div>
@@ -375,6 +376,8 @@ function EquityReport({ auditData }: { auditData: any }) {
           padding: 20,
           marginBottom: 16,
           display: 'flex',
+          flexWrap: 'wrap',
+          gap: 16,
           alignItems: 'center',
           justifyContent: 'space-between',
         }}>
@@ -527,6 +530,106 @@ function EquityReport({ auditData }: { auditData: any }) {
   );
 }
 
+// ─── Official PDF Report Template ──────────────────────────────────────────────
+function OfficialPdfReport({ auditData, repairData }: { auditData: any, repairData: any }) {
+  if (!auditData) return null;
+  const score = Number(auditData.equity_score ?? 0);
+  const displayNum = Math.round(score * 100);
+  const scoreColor = score >= 0.7 ? '#14b8a6' : score >= 0.4 ? '#f59e0b' : '#ef4444';
+
+  return (
+    <div id="official-pdf-report" style={{
+      position: 'fixed', left: '-9999px', top: 0,
+      width: 800, padding: 48,
+      background: '#ffffff', color: '#111827',
+      fontFamily: 'system-ui, -apple-system, sans-serif'
+    }}>
+      {/* Header */}
+      <div style={{ borderBottom: '2px solid #e5e7eb', paddingBottom: 24, marginBottom: 32, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+        <div>
+          <h1 style={{ fontSize: 24, fontWeight: 700, margin: 0, letterSpacing: '-0.02em', color: '#111827' }}>
+            OFFICIAL LINGUISTIC EQUITY REPORT
+          </h1>
+          <div style={{ fontSize: 12, color: '#6b7280', marginTop: 8, letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+            Model: Gemini 2.5 Flash / Vertex AI
+          </div>
+        </div>
+        <div style={{ textAlign: 'right', fontSize: 11, color: '#6b7280', fontFamily: 'monospace' }}>
+          <div>SESSION ID</div>
+          <div style={{ fontWeight: 600, color: '#374151', marginTop: 4 }}>YUK-{Math.floor(1000 + Math.random() * 9000)}-A</div>
+          <div style={{ marginTop: 8 }}>{new Date('2026-04-12').toLocaleDateString()}</div>
+        </div>
+      </div>
+
+      {/* Score */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 24, padding: 24, background: '#f9fafb', borderRadius: 12, border: '1px solid #e5e7eb', marginBottom: 32 }}>
+        <div style={{ width: 80, height: 80, borderRadius: '50%', border: `6px solid ${scoreColor}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <span style={{ fontSize: 28, fontWeight: 700, color: scoreColor }}>{displayNum}</span>
+        </div>
+        <div>
+          <div style={{ fontSize: 16, fontWeight: 600, color: '#374151', marginBottom: 4 }}>
+            Systemic Fairness Scorecard
+          </div>
+          <div style={{ fontSize: 13, color: '#6b7280' }}>
+            A composite evaluation mapping phonetic accuracy, lexical fairness, and bias resilience.
+          </div>
+        </div>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)', gap: 24, marginBottom: 32 }}>
+        {/* Identified Dialect */}
+        <div style={{ padding: 20, border: '1px solid #e5e7eb', borderRadius: 8 }}>
+          <div style={{ fontSize: 11, fontWeight: 600, color: '#6b7280', textTransform: 'uppercase', marginBottom: 8 }}>
+            Identified Dialect Profile
+          </div>
+          <div style={{ fontSize: 14, color: '#111827', lineHeight: 1.5 }}>
+            {auditData.audit?.accent_identified || 'Standard English mapping'}
+          </div>
+        </div>
+        {/* Bias Risk */}
+        <div style={{ padding: 20, border: '1px solid #e5e7eb', borderRadius: 8, background: '#fef2f2', borderColor: '#fecaca' }}>
+          <div style={{ fontSize: 11, fontWeight: 600, color: '#b91c1c', textTransform: 'uppercase', marginBottom: 8 }}>
+            Phonetic Bias Risk
+          </div>
+          <div style={{ fontSize: 13, color: '#991b1b', lineHeight: 1.5 }}>
+            {auditData.audit?.potential_bias_analysis || auditData.xai_explanation || 'No substantial risk metrics detected.'}
+          </div>
+        </div>
+      </div>
+
+      <div style={{ marginBottom: 32 }}>
+        <div style={{ fontSize: 14, fontWeight: 600, color: '#374151', marginBottom: 12 }}>Equitable Transcript Generation</div>
+        {repairData ? (
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+            <div>
+              <div style={{ fontSize: 10, color: '#6b7280', textTransform: 'uppercase', marginBottom: 6 }}>Original Capture</div>
+              <div style={{ padding: 16, background: '#f3f4f6', borderRadius: 6, fontSize: 13, color: '#4b5563', fontStyle: 'italic' }}>
+                &quot;{repairData.original}&quot;
+              </div>
+            </div>
+            <div>
+              <div style={{ fontSize: 10, color: '#14b8a6', textTransform: 'uppercase', marginBottom: 6 }}>Contextual Repair</div>
+              <div style={{ padding: 16, background: '#f0fdfa', border: '1px solid #ccfbf1', borderRadius: 6, fontSize: 13, color: '#115e59' }}>
+                &quot;{repairData.repaired}&quot;
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div style={{ padding: 16, background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: 6, fontSize: 14, color: '#111827' }}>
+            &quot;{auditData.transcript}&quot;
+          </div>
+        )}
+      </div>
+
+      <div style={{ marginTop: 64, paddingTop: 24, borderTop: '1px solid #e5e7eb', textAlign: 'center' }}>
+        <div style={{ fontSize: 11, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+          GENERATED BY YUKTI AI PROMOTING SDG 10.3 LINGUISTIC INCLUSION
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function Home() {
   const {
@@ -543,6 +646,8 @@ export default function Home() {
     generateContextualRepair,
     processAudioBlob,
     micPermissionDenied,
+    dismissMicPopup,
+    resetAudit,
   } = useAudioRecorder();
   const isComplete = !isProcessing && auditData !== null;
 
@@ -560,7 +665,16 @@ export default function Home() {
     setIsGeneratingPdf(true);
     try {
       const { jsPDF } = await import('jspdf');
-      
+      let autoTable: any;
+      try {
+        // @ts-ignore
+        autoTable = (await import('jspdf-autotable')).default;
+      } catch (err) {
+        alert("Please run `npm install jspdf-autotable` to enable the new tabular PDF export!");
+        setIsGeneratingPdf(false);
+        return;
+      }
+
       const doc = new jsPDF({
         orientation: 'portrait',
         unit: 'pt',
@@ -569,84 +683,89 @@ export default function Home() {
 
       const pageWidth = doc.internal.pageSize.getWidth();
       const margin = 50;
-      let y = margin + 20;
+      let y = margin + 30;
 
-      // Header
+      // 1. Header Block
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(22);
-      doc.text('OFFICIAL LINGUISTIC EQUITY REPORT', pageWidth / 2, y, { align: 'center' });
+      doc.setTextColor(20, 20, 20);
+      doc.text('OFFICIAL LINGUISTIC EQUITY REPORT', margin, y);
+      
+      const score = Math.round(Number(auditData?.equity_score ?? 0) * 100);
+      const circleX = pageWidth - margin - 30;
+      const radius = 30;
+      
+      doc.setDrawColor(20, 184, 166);
+      doc.setLineWidth(5);
+      doc.circle(circleX, y - 8, radius);
+      
+      doc.setTextColor(0, 0, 0);
+      doc.setFontSize(32);
+      doc.text(score.toString(), circleX, y + (radius / 3) - 5, { align: 'center' });
       
       y += 60;
 
-      // 2-Column Grid
-      // Left Side: Metadata
-      doc.setFontSize(14);
-      doc.setFont('helvetica', 'bold');
-      doc.text('Metadata', margin, y);
-      
-      doc.setFontSize(11);
-      doc.setFont('helvetica', 'normal');
-      doc.setTextColor(80, 80, 80);
-      doc.text(`SESSION ID: YUK-${Math.floor(1000 + Math.random() * 9000)}-A`, margin, y + 20);
-      doc.text(`DATE: ${new Date('2026-04-12').toLocaleDateString()}`, margin, y + 40);
-      doc.text(`MODEL: Gemini 1.5 Flash`, margin, y + 60);
+      // 2. Horizontal Metadata
+      autoTable(doc, {
+        startY: y,
+        margin: { left: margin, right: margin },
+        head: [['SESSION ID', 'MODEL', 'DATE']],
+        body: [[
+          `YUK-${Math.floor(1000 + Math.random() * 9000)}-A`,
+          'Gemini 2.5 Flash',
+          new Date(2026, 3, 12).toLocaleDateString()
+        ]],
+        theme: 'plain',
+        headStyles: { fillColor: [249, 250, 251], textColor: [100, 100, 100], fontStyle: 'bold', fontSize: 10 },
+        bodyStyles: { textColor: [20, 20, 20], fontStyle: 'bold', fontSize: 11 },
+        styles: { cellPadding: 8, halign: 'center' }
+      });
 
-      // Right Side: Fairness Scorecard
-      const score = Math.round(Number(auditData?.equity_score ?? 0) * 100);
-      
-      doc.setTextColor(0, 0, 0);
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(14);
-      doc.text('Fairness Scorecard', pageWidth - margin - 150, y);
-      
-      doc.setDrawColor(20, 184, 166); // Teal
-      doc.setLineWidth(5);
-      doc.circle(pageWidth - margin - 75, y + 40, 30);
-      
-      // Revert text color explicitly to black
-      doc.setTextColor(0, 0, 0);
-      doc.setFontSize(24);
-      doc.text(score.toString(), pageWidth - margin - 75, y + 48, { align: 'center' });
-      
-      y += 120;
+      y = (doc as any).lastAutoTable.finalY + 30;
 
-      // Distinct boxed sections
-      const boxWidth = pageWidth - margin * 2;
-      
-      // Box 1: Identified Dialect Profile
-      doc.setDrawColor(220, 220, 220);
-      doc.setLineWidth(1);
-      doc.setFillColor(249, 250, 251);
-      doc.rect(margin, y, boxWidth, 80, 'FD');
-      
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(12);
-      doc.setTextColor(100, 100, 100);
-      doc.text('IDENTIFIED DIALECT PROFILE', margin + 20, y + 30);
-      
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(11);
-      doc.setTextColor(20, 20, 20);
-      const dialectText = doc.splitTextToSize(auditData?.audit?.accent_identified || 'Standard English mapping', boxWidth - 40);
-      doc.text(dialectText, margin + 20, y + 55);
+      // 3. Dialect Profile Box
+      autoTable(doc, {
+        startY: y,
+        margin: { left: margin, right: margin },
+        head: [['IDENTIFIED DIALECT PROFILE']],
+        body: [[auditData?.audit?.accent_identified || 'Standard English mapping']],
+        theme: 'grid',
+        headStyles: { fillColor: [249, 250, 251], textColor: [100, 100, 100], fontStyle: 'bold' },
+        bodyStyles: { fillColor: [255, 255, 255], textColor: [20, 20, 20] },
+      });
 
-      y += 110;
+      y = (doc as any).lastAutoTable.finalY + 20;
 
-      // Box 2: Phonetic Bias Risk
-      doc.setDrawColor(254, 202, 202); // light red border
-      doc.setFillColor(254, 242, 242); // very light red bg
-      doc.rect(margin, y, boxWidth, 100, 'FD');
+      // 4. Phonetic Bias Box
+      autoTable(doc, {
+        startY: y,
+        margin: { left: margin, right: margin },
+        head: [['PHONETIC BIAS RISK']],
+        body: [[auditData?.audit?.potential_bias_analysis || 'No substantial risk metrics detected.']],
+        theme: 'grid',
+        headStyles: { fillColor: [254, 242, 242], textColor: [185, 28, 28], fontStyle: 'bold' },
+        bodyStyles: { fillColor: [255, 255, 255], textColor: [153, 27, 27] },
+      });
 
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(12);
-      doc.setTextColor(185, 28, 28);
-      doc.text('PHONETIC BIAS RISK', margin + 20, y + 30);
+      y = (doc as any).lastAutoTable.finalY + 40;
 
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(11);
-      doc.setTextColor(153, 27, 27);
-      const riskText = doc.splitTextToSize(auditData?.audit?.potential_bias_analysis || 'No substantial risk metrics detected.', boxWidth - 40);
-      doc.text(riskText, margin + 20, y + 55);
+      // 5. Comparative Transcript Grids
+      autoTable(doc, {
+        startY: y,
+        margin: { left: margin, right: margin },
+        head: [['ORIGINAL CAPTURE', 'CONTEXTUAL REPAIR']],
+        body: [[
+          repairData ? repairData.original : auditData?.transcript || '',
+          repairData ? repairData.repaired : 'Pending generation...'
+        ]],
+        theme: 'grid',
+        headStyles: { fillColor: [243, 244, 246], textColor: [50, 50, 50], fontStyle: 'bold', halign: 'center' },
+        bodyStyles: { valign: 'top' },
+        columnStyles: {
+          0: { cellWidth: '50%', textColor: [75, 85, 99], fontStyle: 'italic' },
+          1: { cellWidth: '50%', textColor: [15, 118, 110] }
+        }
+      });
 
       // Footer
       doc.setTextColor(100, 100, 100);
@@ -761,43 +880,56 @@ export default function Home() {
       <AnimatePresence>
         {micPermissionDenied && (
           <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.95 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={dismissMicPopup}
             style={{
               position: 'fixed',
-              top: '50%',
-              left: '50%',
-              transform: 'translate(-50%, -50%)',
+              top: 0, left: 0, right: 0, bottom: 0,
               zIndex: 100,
-              background: 'rgba(255,255,255,0.95)',
-              border: '1px solid var(--teal)',
-              borderRadius: 16,
-              padding: 32,
-              width: 400,
-              maxWidth: '90vw',
-              boxShadow: '0 20px 40px rgba(0,0,0,0.1), 0 0 0 100vw rgba(0,0,0,0.5)',
-              backdropFilter: 'blur(10px)',
-              textAlign: 'center',
+              background: 'rgba(0,0,0,0.5)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              backdropFilter: 'blur(4px)',
             }}
           >
-            <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'center' }}>
-              <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'rgba(20,184,166,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <Mic size={24} style={{ color: 'var(--teal)' }} />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                background: 'rgba(255,255,255,0.95)',
+                border: '1px solid var(--teal)',
+                borderRadius: 16,
+                padding: 32,
+                width: 400,
+                maxWidth: '90vw',
+                boxShadow: '0 20px 40px rgba(0,0,0,0.1)',
+                backdropFilter: 'blur(10px)',
+                textAlign: 'center',
+              }}
+            >
+              <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'center' }}>
+                <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'rgba(20,184,166,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Mic size={24} style={{ color: 'var(--teal)' }} />
+                </div>
               </div>
-            </div>
-            <h3 style={{ fontFamily: 'var(--font-serif)', fontSize: 20, color: 'var(--text-primary)', marginBottom: 12 }}>
-              Microphone Access Required
-            </h3>
-            <p style={{ fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: 0 }}>
-              Microphone access is required for live auditing. Please enable permissions in your browser settings or use the Upload Audio option below.
-            </p>
+              <h3 style={{ fontFamily: 'var(--font-serif)', fontSize: 20, color: 'var(--text-primary)', marginBottom: 12 }}>
+                Microphone Access Required
+              </h3>
+              <p style={{ fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: 0 }}>
+                Microphone is blocked. Please reset permissions in your browser address bar to use live auditing, or use the Upload Audio option below.
+              </p>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
 
       {/* ── Main content ── */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '64px 32px' }}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '25px 32px 64px 32px' }}>
 
         {/* Hero — idle state */}
         <AnimatePresence>
@@ -807,7 +939,7 @@ export default function Home() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
-              style={{ textAlign: 'center', marginBottom: 64 }}
+              style={{ textAlign: 'center', marginBottom: 24 }}
             >
               <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-secondary)', letterSpacing: '0.2em', textTransform: 'uppercase', marginBottom: 16 }}>
                 Linguistic Justice · SDG 10.3
@@ -847,7 +979,7 @@ export default function Home() {
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.8 }}
-              style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 24, marginBottom: 16 }}
+              style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 24, marginBottom: 0 }}
             >
               <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 {/* Outer pulse rings */}
@@ -901,12 +1033,12 @@ export default function Home() {
 
               {!isRecording && (
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, marginTop: 12 }}>
-                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 12, fontWeight: 'bold', padding: '16px 0', color: 'var(--text-secondary)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 14, fontWeight: 'bold', padding: '16px 0', color: 'var(--text-secondary)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
                     — OR —
                   </div>
                   <input
                     type="file"
-                    accept=".mp3,.wav,audio/mp3,audio/wav"
+                    accept=".mp3,.wav,.m4a,audio/mp3,audio/wav,audio/m4a,audio/x-m4a"
                     style={{ display: 'none' }}
                     ref={fileInputRef}
                     onChange={handleFileUpload}
@@ -966,7 +1098,7 @@ export default function Home() {
 
         {/* Demo button (idle) */}
         <AnimatePresence>
-          {!isProcessing && !isComplete && !apiError && (
+          {!isProcessing && !isComplete && !apiError && !isRecording && (
             <motion.div
               key="demo"
               initial={{ opacity: 0 }}
@@ -1128,7 +1260,7 @@ export default function Home() {
                   {isGeneratingRepair ? 'Generating Repair...' : 'Generate Contextual Repair'}
                 </button>
                 <button
-                  onClick={() => { startRecording(); }}
+                  onClick={() => { resetAudit(); }}
                   style={{
                     display: 'flex', alignItems: 'center', gap: 8,
                     padding: '10px 20px',
@@ -1176,7 +1308,14 @@ export default function Home() {
             </motion.div>
           )}
         </AnimatePresence>
+      </div>
 
+      <footer style={{
+        marginTop: 'auto',
+        width: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+      }}>
         {/* Footer stats — idle only */}
         <AnimatePresence>
           {!isProcessing && !isComplete && (
@@ -1186,13 +1325,12 @@ export default function Home() {
               animate={{ opacity: 1, transition: { delay: 0.4 } }}
               exit={{ opacity: 0 }}
               style={{
-                position: 'fixed',
-                bottom: 32,
-                left: '50%',
-                transform: 'translateX(-50%)',
                 display: 'flex',
                 alignItems: 'center',
-                gap: 48,
+                justifyContent: 'center',
+                flexWrap: 'wrap',
+                gap: '16px 30px',
+                paddingBottom: 32,
               }}
             >
               {[
@@ -1212,23 +1350,27 @@ export default function Home() {
             </motion.div>
           )}
         </AnimatePresence>
-      </div>
 
-      {/* Bottom bar */}
-      <div style={{
-        padding: '12px 32px',
-        borderTop: '1px solid var(--border)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: 24,
-      }}>
-        {['Google Cloud Platform', 'Vertex AI', 'Gemini 2.5', 'Firebase', 'SDG 10.3'].map((t, i) => (
-          <span key={i} style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-secondary)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-            {t}
-          </span>
-        ))}
-      </div>
+        {/* Bottom bar */}
+        <div style={{
+          padding: '16px 32px calc(env(safe-area-inset-bottom) + 16px)',
+          borderTop: '1px solid var(--border)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexWrap: 'wrap',
+          rowGap: 16,
+          columnGap: 24,
+        }}>
+          {['Google Cloud Platform', 'Vertex AI', 'Gemini 1.5 Flash', 'Firebase', 'SDG 10.3'].map((t, i) => (
+            <span key={i} style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-secondary)', letterSpacing: '0.08em', textTransform: 'uppercase', textAlign: 'center', lineHeight: 1.5 }}>
+              {t}
+            </span>
+          ))}
+        </div>
+      </footer>
+      {/* Hidden Official PDF layout */}
+      <OfficialPdfReport auditData={auditData} repairData={repairData} />
     </main>
   );
 }
