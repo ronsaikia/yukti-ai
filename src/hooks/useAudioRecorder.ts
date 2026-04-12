@@ -1,5 +1,31 @@
 import { useState, useRef } from 'react';
 
+// ─── Mock audit data for demo/testing ────────────────────────────────────────
+const MOCK_AUDIT_DATA = {
+  transcript: "I'm speaking in my regional dialect and the system should capture my authentic phonetic patterns.",
+  word_risks: [
+    { word: "speaking", risk: 0.15 },
+    { word: "regional", risk: 0.28 },
+    { word: "dialect", risk: 0.35 },
+    { word: "system", risk: 0.08 },
+    { word: "authentic", risk: 0.22 },
+    { word: "phonetic", risk: 0.12 },
+  ],
+  audit: {
+    accent_identified: "Northeast Indian / Assamese-influenced English",
+    features: "retroflex consonants, vowel substitution /ə/ → /ɪ/, non-syllabic nasals",
+    potential_bias_analysis: "Standard ASR models would penalize retroflex /ḍ/ sounds and compress vowel space, leading to 40% lower confidence scores than General American English speakers.",
+  },
+  equity_score: 0.82,
+  xai_explanation: "High phonetic accuracy preserved regional vowel patterns and retroflex consonants without normalization. Contextual meaning remained intact despite dialectal variation.",
+  scorecard: {
+    phonetic_accuracy: 0.85,
+    lexical_fairness: 0.80,
+    contextual_equity: 0.84,
+    overall_bias_risk: 0.12,
+  },
+};
+
 export const useAudioRecorder = () => {
   const [isRecording, setIsRecording] = useState(false);
   const [auditData, setAuditData] = useState<any>(null);
@@ -7,12 +33,15 @@ export const useAudioRecorder = () => {
   const [pipelineStage, setPipelineStage] = useState(-1);
   const [repairData, setRepairData] = useState<any>(null);
   const [isGeneratingRepair, setIsGeneratingRepair] = useState(false);
+  const [apiError, setApiError] = useState<string | null>(null);
   const mediaRecorder = useRef<MediaRecorder | null>(null);
   const chunks = useRef<Blob[]>([]);
 
   const startRecording = async () => {
     setAuditData(null);
+    setRepairData(null);
     setPipelineStage(-1);
+    setApiError(null);
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
     mediaRecorder.current = new MediaRecorder(stream);
     chunks.current = [];
@@ -35,6 +64,7 @@ export const useAudioRecorder = () => {
         if (!response.ok || !response.body) {
           const errorResult = await response.json().catch(() => ({}));
           console.error('Backend returned an error. Wait aborted:', errorResult);
+          setApiError('Failed to process audio. API quota may be exceeded.');
           return;
         }
 
@@ -65,6 +95,7 @@ export const useAudioRecorder = () => {
 
               if (payload.type === 'error') {
                 console.error('Audit pipeline error:', payload.message);
+                setApiError(payload.message || 'Audit pipeline error');
               }
             } catch (parseError) {
               console.warn('Skipping non-JSON pipeline line:', line, parseError);
@@ -73,6 +104,7 @@ export const useAudioRecorder = () => {
         }
       } catch (error) {
         console.error("Error sending audio to audit:", error);
+        setApiError('Network error. Please try again.');
       } finally {
         setIsProcessing(false);
       }
@@ -85,6 +117,27 @@ export const useAudioRecorder = () => {
   const stopRecording = () => {
     mediaRecorder.current?.stop();
     setIsRecording(false);
+  };
+
+  // Demo mode to show results with mock data
+  const startDemo = async () => {
+    setAuditData(null);
+    setRepairData(null);
+    setPipelineStage(-1);
+    setApiError(null);
+    setIsProcessing(true);
+
+    // Simulate real-time pipeline stages
+    const stageDurations = [600, 900, 800, 1000, 700];
+    for (let i = 0; i < 5; i++) {
+      setPipelineStage(i);
+      await new Promise(resolve => setTimeout(resolve, stageDurations[i]));
+    }
+
+    // Return mock data
+    setAuditData(MOCK_AUDIT_DATA);
+    setIsProcessing(false);
+    setPipelineStage(-1);
   };
 
   const generateContextualRepair = async () => {
@@ -116,5 +169,5 @@ export const useAudioRecorder = () => {
     }
   };
 
-  return { isRecording, startRecording, stopRecording, auditData, isProcessing, pipelineStage, repairData, isGeneratingRepair, generateContextualRepair };
+  return { isRecording, startRecording, stopRecording, auditData, isProcessing, pipelineStage, repairData, isGeneratingRepair, generateContextualRepair, startDemo, apiError };
 };
