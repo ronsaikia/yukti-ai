@@ -49,14 +49,18 @@ export async function POST(request: Request) {
 
         emit({ type: 'stage', stage: 2 });
 
-        const auditPrompt = `You are an AI Linguistic Justice auditor (SDG 10). Analyze this audio for regional accent bias.
+        const auditPrompt = `You are an AI Linguistic Justice auditor (SDG 10). Your objective is to analyze the provided audio transcript for accent and language bias, specifically English , Hindi , and Assamese, including complex code switching scenarios.
+  
+  - DO NOT assume non-english words are inherently high risk.
+  - Treat hindi and assamese as valid target languages, not outliers.
 
   Return ONLY a valid JSON object with exactly these keys:
   - "transcript": MUST be a verbatim, raw capture of what was spoken, including regional markers and code-mixing (e.g., 'Moi Guwahati thaku'). DO NOT apply any "autocorrect", standardizing, or repairs here. It must reflect the exact pronunciation and slang.
   - "word_risks": an array of objects, one per word in the transcript, each with:
     - "word": the word as a string
-    - "risk": a number from 0.0 (no bias risk) to 1.0 (high bias risk), representing how likely a standard AI would misinterpret or penalize this word due to accent
-  - "audit": an object with keys:
+    - "risk": a number from 0.0 (no bias risk) to 1.0 (high bias risk), representing how likely a standard ASR(Automatic Speech Recognition) would misinterpret or penalize this word due to accent or language mismatch.
+    - "language": one of "en", "hi", "as", or "other" based on the world's most likely language.
+  - "audit": an object providing a holistic evaluation , containing exactly with these keys:
     - "accent_identified": string (e.g. "Northeast Indian / Assamese-influenced English")
     - "features": string (phonetic patterns detected, e.g. "retroflex consonants, vowel substitution")
     - "potential_bias_analysis": string (how a standard AI would wrongly penalize this speaker)
