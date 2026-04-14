@@ -121,16 +121,13 @@ function LanguageBreakdownBar({ wordRisks }: { wordRisks: any[] }) {
   });
 
   const total = wordRisks.length || 1;
-  // Largest-remainder algorithm to ensure percentages sum to 100
   const rawPcts = {
     en: (counts.en / total) * 100,
     hi: (counts.hi / total) * 100,
     as: (counts.as / total) * 100,
     other: (counts.other / total) * 100,
   };
-  // Floor all values
   const floored = Object.fromEntries(Object.entries(rawPcts).map(([k, v]) => [k, Math.floor(v)]));
-  // Distribute remainder to largest fractional parts
   const remainder = 100 - Object.values(floored).reduce((a, b) => a + b, 0);
   const sorted = Object.entries(rawPcts)
     .map(([k, v]) => ({ k, frac: v - Math.floor(v) }))
@@ -140,9 +137,9 @@ function LanguageBreakdownBar({ wordRisks }: { wordRisks: any[] }) {
 
   const colors = {
     en: 'var(--teal)',
-    hi: '#f59e0b', // amber
-    as: '#3b82f6', // blue
-    other: '#9ca3af', // gray
+    hi: '#f59e0b',
+    as: '#3b82f6',
+    other: '#9ca3af',
   };
 
   const labels: Record<string, string> = {
@@ -152,12 +149,8 @@ function LanguageBreakdownBar({ wordRisks }: { wordRisks: any[] }) {
     other: 'Other',
   };
 
-  // Build label string
-  const parts = [];
-  if (percentages.en > 0) parts.push(`${percentages.en}% ${labels.en}`);
-  if (percentages.as > 0) parts.push(`${percentages.as}% ${labels.as}`);
-  if (percentages.hi > 0) parts.push(`${percentages.hi}% ${labels.hi}`);
-  if (percentages.other > 0) parts.push(`${percentages.other}% ${labels.other}`);
+  const activeLangs = Object.entries(percentages).filter(([, pct]) => pct > 0);
+  const hasCodeSwitching = activeLangs.length > 1;
 
   return (
     <div style={{ marginTop: 'clamp(16px, 4vw, 24px)', marginBottom: 'clamp(16px, 4vw, 24px)' }}>
@@ -165,99 +158,105 @@ function LanguageBreakdownBar({ wordRisks }: { wordRisks: any[] }) {
         fontFamily: 'var(--font-serif)',
         fontSize: 'clamp(13px, 2.5vw, 15px)',
         color: 'var(--text-secondary)',
-        marginBottom: 'clamp(10px, 2vw, 14px)'
+        marginBottom: 'clamp(10px, 2vw, 14px)',
+        display: 'flex',
+        alignItems: 'center',
+        gap: 8,
       }}>
         Language Composition
+        {hasCodeSwitching && (
+          <span style={{
+            fontFamily: 'monospace',
+            fontSize: 11,
+            color: '#3b82f6',
+            background: 'rgba(59,130,246,0.08)',
+            border: '1px solid rgba(59,130,246,0.15)',
+            borderRadius: 4,
+            padding: '2px 8px',
+          }}>
+            code-switching
+          </span>
+        )}
       </div>
 
-      {Object.values(counts).filter(v => v > 0).length > 1 && (
-        <div style={{
-          padding: 'clamp(8px, 2vw, 12px) clamp(10px, 2vw, 16px)',
-          background: 'rgba(59,130,246,0.08)',
-          border: '1px solid rgba(59,130,246,0.2)',
-          borderRadius: 8,
-          marginBottom: 'clamp(10px, 2vw, 14px)',
-          display: 'flex',
-          alignItems: 'center',
-          gap: 8,
-        }}>
-          <span style={{ fontSize: 14 }}>🔀</span>
-          <div>
-            <div style={{
-              fontFamily: 'var(--font-mono)',
-              fontSize: 'clamp(9px, 1.8vw, 11px)',
-              fontWeight: 700,
-              color: '#3b82f6',
-              letterSpacing: '0.06em',
-              textTransform: 'uppercase',
-            }}>
-              Code-Switching Detected
-            </div>
-            <div style={{
-              fontFamily: 'var(--font-mono)',
-              fontSize: 'clamp(8px, 1.5vw, 10px)',
-              color: 'var(--text-secondary)',
-              marginTop: 2,
-            }}>
-              {parts.join(' · ')}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Stacked bar */}
+      {/* Thin pill segmented bar */}
       <div style={{
         width: '100%',
-        height: 'clamp(20px, 4vw, 28px)',
+        height: 8,
         display: 'flex',
-        borderRadius: 4,
+        borderRadius: 99,
         overflow: 'hidden',
         background: 'rgba(0,0,0,0.04)',
       }}>
-        {Object.entries(percentages).map(([lang, pct]) => {
-          if (pct === 0) return null;
-          return (
-            <div
-              key={lang}
-              style={{
-                width: `${pct}%`,
-                height: '100%',
-                background: colors[lang as keyof typeof colors],
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-              title={`${labels[lang]}: ${pct}%`}
-            >
-              {pct >= 15 && (
-                <span style={{
-                  fontSize: 'clamp(8px, 1.5vw, 10px)',
-                  fontFamily: 'var(--font-mono)',
-                  color: '#fff',
-                  fontWeight: 600,
-                }}>
-                  {pct}%
-                </span>
-              )}
-            </div>
-          );
-        })}
+        {activeLangs.map(([lang, pct]) => (
+          <div
+            key={lang}
+            style={{
+              width: `${pct}%`,
+              height: '100%',
+              background: colors[lang as keyof typeof colors],
+            }}
+          />
+        ))}
       </div>
 
-      {/* Label */}
+      {/* Percentage labels below segments */}
       <div style={{
-        marginTop: 'clamp(8px, 2vw, 12px)',
-        fontFamily: 'var(--font-mono)',
-        fontSize: 'clamp(9px, 1.8vw, 11px)',
-        color: 'var(--text-secondary)',
-        letterSpacing: '0.02em',
+        display: 'flex',
+        width: '100%',
+        marginTop: 6,
       }}>
-        {parts.join(' · ')}
+        {activeLangs.map(([lang, pct]) => (
+          <div
+            key={`label-${lang}`}
+            style={{
+              width: `${pct}%`,
+              textAlign: 'center',
+            }}
+          >
+            <span style={{
+              fontFamily: 'var(--font-mono)',
+              fontSize: 10,
+              color: colors[lang as keyof typeof colors],
+              fontWeight: 500,
+            }}>
+              {pct}%
+            </span>
+          </div>
+        ))}
+      </div>
+
+      {/* Legend with colored dots */}
+      <div style={{
+        marginTop: 12,
+        display: 'flex',
+        flexWrap: 'wrap',
+        gap: '12px 16px',
+      }}>
+        {activeLangs.map(([lang, pct]) => (
+          <div key={`legend-${lang}`} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <div
+              style={{
+                width: 8,
+                height: 8,
+                borderRadius: '50%',
+                background: colors[lang as keyof typeof colors],
+              }}
+            />
+            <span style={{
+              fontFamily: 'var(--font-mono)',
+              fontSize: 11,
+              color: 'var(--text-secondary)',
+            }}>
+              {labels[lang]}
+            </span>
+          </div>
+        ))}
       </div>
 
       {/* Caption */}
       <p style={{
-        marginTop: 'clamp(8px, 2vw, 10px)',
+        marginTop: 12,
         fontSize: 'clamp(10px, 2vw, 12px)',
         color: 'var(--text-muted)',
         lineHeight: 1.6,
@@ -271,13 +270,12 @@ function LanguageBreakdownBar({ wordRisks }: { wordRisks: any[] }) {
 
 // ─── Before/After Comparison Chart ────────────────────────────────────────────
 function BiasComparisonChart({ equityScore }: { equityScore: number }) {
-  const standardAsrScore = 21; // Hardcoded value as specified
+  const standardAsrScore = 21;
   const yuktiScore = Math.round(equityScore * 100);
-  const maxHeight = 120;
-  // Correct: normalize score (0-100) to bar height
+  const maxHeight = 140;
+  const baselineY = 150;
   const standardBarHeight = Math.round((standardAsrScore / 100) * maxHeight);
   const yuktiBarHeight = Math.round((yuktiScore / 100) * maxHeight);
-
   const improvement = yuktiScore - standardAsrScore;
 
   return (
@@ -289,124 +287,115 @@ function BiasComparisonChart({ equityScore }: { equityScore: number }) {
         textTransform: 'uppercase',
         color: 'var(--text-secondary)',
         marginBottom: 'clamp(12px, 3vw, 20px)',
+        textAlign: 'center',
       }}>
         Bias correction delta
       </div>
 
-      <svg width="100%" height={maxHeight + 50} viewBox="0 0 200 170" style={{ maxWidth: 280 }}>
-        {/* Standard ASR Bar (Left) */}
-        <rect
-          x="30"
-          y={maxHeight - standardBarHeight}
-          width="50"
-          height={standardBarHeight}
-          fill="var(--red)"
-          rx="4"
-          fillOpacity="0.8"
-        />
-        <text
-          x="55"
-          y={maxHeight - standardBarHeight - 8}
-          textAnchor="middle"
-          fontSize="14"
-          fontWeight="700"
-          fill="var(--red)"
-          fontFamily="var(--font-mono)"
-        >
-          {standardAsrScore}
-        </text>
-        <text
-          x="55"
-          y={maxHeight + 18}
-          textAnchor="middle"
-          fontSize="9"
-          fill="var(--text-secondary)"
-          fontFamily="var(--font-mono)"
-          fontWeight="600"
-        >
-          Industry Standard
-        </text>
-
-        {/* Delta Arrow and improvement badge */}
-        <g>
-          {/* Arrow line */}
+      <div style={{ display: 'flex', justifyContent: 'center' }}>
+        <svg width="100%" height={200} viewBox="0 0 480 200" style={{ maxWidth: 480 }}>
+          {/* Baseline */}
           <line
-            x1="88"
-            y1={maxHeight - 60}
-            x2="112"
-            y2={maxHeight - 60}
-            stroke="var(--teal)"
-            strokeWidth="2"
+            x1="20"
+            y1={baselineY}
+            x2="460"
+            y2={baselineY}
+            stroke="rgba(0,0,0,0.12)"
+            strokeWidth="1"
           />
-          {/* Arrow head */}
-          <polygon
-            points={`112,${maxHeight - 64} 112,${maxHeight - 56} 118,${maxHeight - 60}`}
-            fill="var(--teal)"
-          />
-          {/* Improvement badge */}
+
+          {/* Standard ASR Bar (Left) - minimal monochrome */}
           <rect
-            x="82"
-            y={maxHeight - 78}
-            width="36"
-            height="16"
-            rx="8"
-            fill="var(--teal)"
+            x="100"
+            y={baselineY - standardBarHeight}
+            width="80"
+            height={standardBarHeight}
+            fill="rgba(0,0,0,0.25)"
+            rx="2"
           />
           <text
-            x="100"
-            y={maxHeight - 67}
+            x="140"
+            y={baselineY - standardBarHeight - 12}
+            textAnchor="middle"
+            fontSize="14"
+            fontWeight="600"
+            fill="rgba(0,0,0,0.5)"
+            fontFamily="var(--font-mono)"
+          >
+            {standardAsrScore}
+          </text>
+          <text
+            x="140"
+            y={baselineY + 18}
             textAnchor="middle"
             fontSize="9"
-            fontWeight="700"
-            fill="#fff"
+            fill="var(--text-secondary)"
+            fontFamily="var(--font-mono)"
+            letterSpacing="0.04em"
+          >
+            Industry Standard
+          </text>
+
+          {/* Yukti Bar (Right) - teal */}
+          <rect
+            x="300"
+            y={baselineY - yuktiBarHeight}
+            width="80"
+            height={yuktiBarHeight}
+            fill="var(--teal)"
+            rx="2"
+          />
+          <text
+            x="340"
+            y={baselineY - yuktiBarHeight - 12}
+            textAnchor="middle"
+            fontSize="14"
+            fontWeight="600"
+            fill="var(--teal)"
+            fontFamily="var(--font-mono)"
+          >
+            {yuktiScore}
+          </text>
+          <text
+            x="340"
+            y={baselineY + 18}
+            textAnchor="middle"
+            fontSize="9"
+            fill="var(--text-secondary)"
+            fontFamily="var(--font-mono)"
+            letterSpacing="0.04em"
+          >
+            Yukti Score
+          </text>
+
+          {/* Delta arrow line */}
+          <line
+            x1="190"
+            y1={baselineY - 70}
+            x2="290"
+            y2={baselineY - 70}
+            stroke="rgba(20,184,166,0.4)"
+            strokeWidth="1.5"
+          />
+          <polygon
+            points="290,65 290,75 298,70"
+            fill="rgba(20,184,166,0.4)"
+          />
+
+          {/* Improvement label */}
+          <text
+            x="240"
+            y={baselineY - 85}
+            textAnchor="middle"
+            fontSize="12"
+            fontWeight="600"
+            fill="#0f8b7f"
             fontFamily="var(--font-mono)"
           >
             +{improvement}
           </text>
-        </g>
-
-        {/* Yukti Bar (Right) */}
-        <rect
-          x="120"
-          y={maxHeight - yuktiBarHeight}
-          width="50"
-          height={yuktiBarHeight}
-          fill="var(--teal)"
-          rx="4"
-        />
-        <text
-          x="145"
-          y={maxHeight - yuktiBarHeight - 8}
-          textAnchor="middle"
-          fontSize="14"
-          fontWeight="700"
-          fill="var(--teal)"
-          fontFamily="var(--font-mono)"
-        >
-          {yuktiScore}
-        </text>
-        <text
-          x="145"
-          y={maxHeight + 18}
-          textAnchor="middle"
-          fontSize="9"
-          fill="var(--text-secondary)"
-          fontFamily="var(--font-mono)"
-          fontWeight="600"
-        >
-          Yukti Score
-        </text>
-
-        {/* Baseline */}
-        <line
-          x1="20"
-          y1={maxHeight}
-          x2="180"
-          y2={maxHeight}
-          stroke="rgba(0,0,0,0.1)"
-          strokeWidth="1"
-        />
-      </svg>
+        </svg>
+      </div>
     </div>
   );
 }
@@ -455,20 +444,50 @@ function ResearchBasis() {
           <span style={{ fontSize: 8 }}>↗</span>
           [1] Racial Disparities in Automated Speech Recognition · Stanford HAI · 2020
         </a>
-        <span style={{
-          fontSize: 'clamp(9px, 1.8vw, 11px)',
-          fontFamily: 'var(--font-mono)',
-          color: 'var(--text-secondary)',
-        }}>
+        <a
+          href="https://www.media.mit.edu/publications/accent-bias-and-ai-hiring/"
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{
+            fontSize: 'clamp(9px, 1.8vw, 11px)',
+            fontFamily: 'var(--font-mono)',
+            color: 'var(--teal)',
+            textDecoration: 'underline',
+            textUnderlineOffset: '2px',
+            opacity: 0.9,
+            transition: 'opacity 0.2s ease',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 4,
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.opacity = '1'; }}
+          onMouseLeave={(e) => { e.currentTarget.style.opacity = '0.9'; }}
+        >
+          <span style={{ fontSize: 8 }}>↗</span>
           [2] Accent Bias in AI Hiring Tools · MIT Media Lab · 2022
-        </span>
-        <span style={{
-          fontSize: 'clamp(9px, 1.8vw, 11px)',
-          fontFamily: 'var(--font-mono)',
-          color: 'var(--text-secondary)',
-        }}>
+        </a>
+        <a
+          href="https://www.microsoft.com/en-us/research/publication/xtts/"
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{
+            fontSize: 'clamp(9px, 1.8vw, 11px)',
+            fontFamily: 'var(--font-mono)',
+            color: 'var(--teal)',
+            textDecoration: 'underline',
+            textUnderlineOffset: '2px',
+            opacity: 0.9,
+            transition: 'opacity 0.2s ease',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 4,
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.opacity = '1'; }}
+          onMouseLeave={(e) => { e.currentTarget.style.opacity = '0.9'; }}
+        >
+          <span style={{ fontSize: 8 }}>↗</span>
           [3] Microsoft XTTS Accent Study · 2023
-        </span>
+        </a>
       </div>
     </div>
   );
@@ -1040,7 +1059,7 @@ function EquityReport({ auditData }: { auditData: any }) {
 }
 
 // ─── Waveform Visualizer Canvas ───────────────────────────────────────────────
-function WaveformVisualizer({ stream, isRecording }: { stream: MediaStream | null; isRecording?: boolean }) {
+function WaveformVisualizer({ stream }: { stream: MediaStream | null }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
@@ -1048,8 +1067,13 @@ function WaveformVisualizer({ stream, isRecording }: { stream: MediaStream | nul
   const animationRef = useRef<number | null>(null);
 
   useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
     if (!stream) {
-      // Cleanup
+      // Cleanup audio resources
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current);
         animationRef.current = null;
@@ -1066,15 +1090,24 @@ function WaveformVisualizer({ stream, isRecording }: { stream: MediaStream | nul
         audioContextRef.current.close();
         audioContextRef.current = null;
       }
+
+      // Draw flat line when no stream
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.strokeStyle = 'rgba(0,0,0,0.08)';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(0, 28);
+      ctx.lineTo(280, 28);
+      ctx.stroke();
       return;
     }
 
-    // Setup Web Audio API using the passed stream directly
+    // Setup Web Audio API
     try {
       const audioContext = new AudioContext();
       const analyser = audioContext.createAnalyser();
-      analyser.fftSize = 256;
-      analyser.smoothingTimeConstant = 0.8;
+      analyser.fftSize = 2048;
+      analyser.smoothingTimeConstant = 0.85;
 
       const source = audioContext.createMediaStreamSource(stream);
       source.connect(analyser);
@@ -1083,70 +1116,50 @@ function WaveformVisualizer({ stream, isRecording }: { stream: MediaStream | nul
       analyserRef.current = analyser;
       sourceRef.current = source;
 
-      const canvas = canvasRef.current;
-      if (!canvas) return;
-
-      const ctx = canvas.getContext('2d');
-      if (!ctx) return;
-
       const bufferLength = analyser.frequencyBinCount;
       const timeDataArray = new Uint8Array(bufferLength);
-      const freqDataArray = new Uint8Array(bufferLength);
 
       const draw = () => {
-        if (!analyserRef.current || !canvas) return;
+        if (!analyserRef.current || !canvas || !ctx) return;
 
-        // Get both time domain and frequency data
         analyserRef.current.getByteTimeDomainData(timeDataArray);
-        analyserRef.current.getByteFrequencyData(freqDataArray);
-
-        // Clear canvas
-        ctx.fillStyle = 'rgba(0, 0, 0, 0)';
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        // Draw waveform (top portion - 60%)
-        ctx.lineWidth = 2;
-        ctx.strokeStyle = 'var(--teal)';
-        ctx.beginPath();
-
-        const waveformHeight = canvas.height * 0.6;
         const sliceWidth = canvas.width / bufferLength;
+        const height = canvas.height;
+        const halfHeight = height / 2;
+
+        // Create waveform path
+        const points: { x: number; y: number }[] = [];
         let x = 0;
 
         for (let i = 0; i < bufferLength; i++) {
           const v = timeDataArray[i] / 128.0;
-          const y = (v * waveformHeight) / 2;
-
-          if (i === 0) {
-            ctx.moveTo(x, y);
-          } else {
-            ctx.lineTo(x, y);
-          }
-
+          const y = ((v - 1) * halfHeight) + halfHeight;
+          points.push({ x, y });
           x += sliceWidth;
         }
 
-        ctx.lineTo(canvas.width, waveformHeight / 2);
-        ctx.stroke();
-
-        // Draw frequency bars (bottom portion - 30%)
-        const barAreaStart = canvas.height * 0.7;
-        const barHeight = canvas.height * 0.25;
-        const numBars = 32;
-        const barWidth = canvas.width / numBars;
-
-        for (let i = 0; i < numBars; i++) {
-          const freqIndex = Math.floor((i / numBars) * (bufferLength / 2));
-          const value = freqDataArray[freqIndex];
-          const barH = (value / 255) * barHeight;
-
-          const gradient = ctx.createLinearGradient(0, barAreaStart + barHeight, 0, barAreaStart);
-          gradient.addColorStop(0, 'rgba(20,184,166,0.3)');
-          gradient.addColorStop(1, 'rgba(20,184,166,0.8)');
-
-          ctx.fillStyle = gradient;
-          ctx.fillRect(i * barWidth + barWidth * 0.2, barAreaStart + barHeight - barH, barWidth * 0.6, barH);
+        // Fill region under waveform
+        ctx.beginPath();
+        ctx.moveTo(points[0].x, height);
+        for (let i = 0; i < points.length; i++) {
+          ctx.lineTo(points[i].x, points[i].y);
         }
+        ctx.lineTo(points[points.length - 1].x, height);
+        ctx.closePath();
+        ctx.fillStyle = 'rgba(20,184,166,0.08)';
+        ctx.fill();
+
+        // Draw waveform line
+        ctx.beginPath();
+        ctx.moveTo(points[0].x, points[0].y);
+        for (let i = 1; i < points.length; i++) {
+          ctx.lineTo(points[i].x, points[i].y);
+        }
+        ctx.lineWidth = 1.5;
+        ctx.strokeStyle = 'rgba(20,184,166,0.9)';
+        ctx.stroke();
 
         animationRef.current = requestAnimationFrame(draw);
       };
@@ -1172,29 +1185,17 @@ function WaveformVisualizer({ stream, isRecording }: { stream: MediaStream | nul
     };
   }, [stream]);
 
-  if (!stream) return null;
-
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      style={{
-        marginTop: 16,
-        padding: 4,
-        borderRadius: 8,
-        border: isRecording ? '2px solid rgba(20,184,166,0.5)' : '1px solid rgba(0,0,0,0.1)',
-        boxShadow: isRecording ? '0 0 20px rgba(20,184,166,0.3)' : 'none',
-        transition: 'box-shadow 0.3s ease, border-color 0.3s ease',
-      }}
+      style={{ marginTop: 12 }}
     >
       <canvas
         ref={canvasRef}
         width={280}
-        height={60}
-        style={{
-          borderRadius: 4,
-          display: 'block',
-        }}
+        height={56}
+        style={{ display: 'block', background: 'transparent' }}
       />
     </motion.div>
   );
@@ -1242,38 +1243,23 @@ export default function Home() {
     try {
       const { default: html2canvas } = await import('html2canvas');
       const { jsPDF } = await import('jspdf');
-
-      const element = document.getElementById('official-pdf-report');
-      if (!element) return;
-
-      const clone = element.cloneNode(true) as HTMLElement;
-      clone.style.position = 'absolute';
-      clone.style.left = '-9999px';
-      clone.style.top = '0px';
-      document.body.appendChild(clone);
-
-      const canvas = await html2canvas(clone, {
-        scale: 3,
+      const element = document.getElementById('equity-report');
+      if (!element) { alert('Report not found'); return; }
+      const canvas = await html2canvas(element, {
+        scale: 2,
         useCORS: true,
         backgroundColor: '#ffffff',
-        width: element.id === 'official-pdf-report' ? 800 : clone.scrollWidth,
-        height: clone.scrollHeight,
-        windowWidth: element.id === 'official-pdf-report' ? 800 : clone.scrollWidth,
+        logging: false,
       });
-
-      document.body.removeChild(clone);
-
       const imgData = canvas.toDataURL('image/png');
-      const pdf = new jsPDF({
-        orientation: 'portrait',
-        unit: 'px',
-        format: [canvas.width / 3, canvas.height / 3]
-      });
-      pdf.addImage(imgData, 'PNG', 0, 0, canvas.width / 3, canvas.height / 3);
+      const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
       pdf.save('Linguistic_Justice_Audit_Report.pdf');
     } catch (error) {
-      console.error('Error generating PDF:', error);
-      alert('Error generating PDF report.');
+      console.error('PDF error:', error);
+      alert('Error generating PDF. Please try again.');
     } finally {
       setIsGeneratingPdf(false);
     }
@@ -1557,30 +1543,27 @@ export default function Home() {
                   alignItems: 'center',
                   justifyContent: 'center',
                 }}>
-                  {/* Pulse rings - emanating outward when recording */}
+                  {/* Pulse rings - two uniform concentric rings */}
                   {isRecording && (
                     <>
-                      {[0, 1, 2].map((i) => (
-                        <motion.div
-                          key={i}
-                          initial={{ scale: 1, opacity: 0.6 }}
-                          animate={{ scale: 2, opacity: 0 }}
-                          transition={{
-                            duration: 1.5,
-                            repeat: Infinity,
-                            delay: i * 0.5,
-                            ease: 'easeOut',
-                          }}
-                          style={{
-                            position: 'absolute',
-                            width: 80,
-                            height: 80,
-                            borderRadius: '50%',
-                            border: '2px solid var(--teal)',
-                            background: 'rgba(20,184,166,0.1)',
-                          }}
-                        />
-                      ))}
+                      <motion.div
+                        animate={{ scale: [1, 1.6], opacity: [0.4, 0] }}
+                        transition={{ duration: 1.8, repeat: Infinity, ease: 'easeOut' }}
+                        style={{
+                          position: 'absolute', width: 80, height: 80,
+                          borderRadius: '50%', border: '1.5px solid rgba(20,184,166,0.5)',
+                          pointerEvents: 'none',
+                        }}
+                      />
+                      <motion.div
+                        animate={{ scale: [1, 2.0], opacity: [0.25, 0] }}
+                        transition={{ duration: 1.8, repeat: Infinity, ease: 'easeOut', delay: 0.5 }}
+                        style={{
+                          position: 'absolute', width: 80, height: 80,
+                          borderRadius: '50%', border: '1px solid rgba(20,184,166,0.3)',
+                          pointerEvents: 'none',
+                        }}
+                      />
                     </>
                   )}
 
@@ -1618,7 +1601,7 @@ export default function Home() {
                 </div>
 
                 {/* Waveform Visualizer - BELOW the button */}
-                <WaveformVisualizer stream={isRecording ? streamRef.current : null} isRecording={isRecording} />
+                <WaveformVisualizer stream={isRecording ? streamRef.current : null} />
 
                 {/* Label - BELOW the waveform */}
                 <div style={{
@@ -1928,69 +1911,69 @@ export default function Home() {
                   <EquityReport auditData={auditData} />
                 </div>
 
-              {repairData && (
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  style={{
-                    width: '100%',
-                    maxWidth: 860,
-                    marginTop: 24,
-                    padding: 20,
-                    border: '1px solid var(--border)',
-                    borderRadius: 12,
-                    background: 'rgba(20,184,166,0.04)',
-                  }}
-                >
-                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--teal)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 14 }}>
-                    Linguistic Repair
-                  </div>
+                {repairData && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    style={{
+                      width: '100%',
+                      maxWidth: 860,
+                      marginTop: 24,
+                      padding: 20,
+                      border: '1px solid var(--border)',
+                      borderRadius: 12,
+                      background: 'rgba(20,184,166,0.04)',
+                    }}
+                  >
+                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--teal)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 14 }}>
+                      Linguistic Repair
+                    </div>
 
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                    <div>
-                      <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-secondary)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 8 }}>
-                        Before
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                      <div>
+                        <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-secondary)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 8 }}>
+                          Before
+                        </div>
+                        <div style={{
+                          background: 'rgba(0,0,0,0.03)',
+                          border: '1px solid var(--border)',
+                          borderRadius: 8,
+                          padding: '12px 14px',
+                          fontFamily: 'var(--font-mono)',
+                          fontSize: 12,
+                          color: 'var(--text-secondary)',
+                          lineHeight: 1.6,
+                        }}>
+                          &quot;{repairData.original || auditData.transcript}&quot;
+                        </div>
                       </div>
-                      <div style={{
-                        background: 'rgba(0,0,0,0.03)',
-                        border: '1px solid var(--border)',
-                        borderRadius: 8,
-                        padding: '12px 14px',
-                        fontFamily: 'var(--font-mono)',
-                        fontSize: 12,
-                        color: 'var(--text-secondary)',
-                        lineHeight: 1.6,
-                      }}>
-                        &quot;{repairData.original || auditData.transcript}&quot;
+
+                      <div>
+                        <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--teal)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 8 }}>
+                          After
+                        </div>
+                        <div style={{
+                          background: 'rgba(20,184,166,0.06)',
+                          border: '1px solid rgba(20,184,166,0.2)',
+                          borderRadius: 8,
+                          padding: '12px 14px',
+                          fontFamily: 'var(--font-mono)',
+                          fontSize: 12,
+                          color: 'var(--text-primary)',
+                          lineHeight: 1.6,
+                        }}>
+                          &quot;{repairData.repaired || auditData.transcript}&quot;
+                        </div>
                       </div>
                     </div>
 
-                    <div>
-                      <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--teal)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 8 }}>
-                        After
-                      </div>
-                      <div style={{
-                        background: 'rgba(20,184,166,0.06)',
-                        border: '1px solid rgba(20,184,166,0.2)',
-                        borderRadius: 8,
-                        padding: '12px 14px',
-                        fontFamily: 'var(--font-mono)',
-                        fontSize: 12,
-                        color: 'var(--text-primary)',
-                        lineHeight: 1.6,
-                      }}>
-                        &quot;{repairData.repaired || auditData.transcript}&quot;
-                      </div>
-                    </div>
-                  </div>
-
-                  {repairData.explanation && (
-                    <p style={{ marginTop: 12, fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.7 }}>
-                      {repairData.explanation}
-                    </p>
-                  )}
-                </motion.div>
-              )}
+                    {repairData.explanation && (
+                      <p style={{ marginTop: 12, fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.7 }}>
+                        {repairData.explanation}
+                      </p>
+                    )}
+                  </motion.div>
+                )}
               </div>
 
               {/* Record again */}
