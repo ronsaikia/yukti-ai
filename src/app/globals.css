@@ -60,7 +60,7 @@ body {
 
 /* Subtle grid background */
 .grid-bg {
-  background-image: 
+  background-image:
     linear-gradient(rgba(0,0,0,0.03) 1px, transparent 1px),
     linear-gradient(90deg, rgba(0,0,0,0.03) 1px, transparent 1px);
   background-size: 40px 40px;
@@ -148,6 +148,693 @@ body {
 @media (min-width: 768px) {
   .hide-mobile {
     display: flex;
+  }
+}
+
+/* ============================================================
+   PDF EXPORT MODE STYLES
+   ============================================================ */
+
+.pdf-export-mode {
+  width: 794px !important;
+  max-width: 794px !important;
+  margin: 0 auto !important;
+  padding: 40px !important;
+  background: #ffffff !important;
+  box-sizing: border-box !important;
+}
+
+.pdf-export-mode .audit-content-grid {
+  display: block !important;
+  width: 100% !important;
+}
+
+.pdf-export-mode .audit-map-section,
+.pdf-export-mode .audit-bias-section {
+  width: 100% !important;
+  margin-bottom: 24px !important;
+}
+
+.pdf-export-mode .map-container {
+  max-width: 300px !important;
+  margin: 0 auto !important;
+}
+
+.pdf-export-mode .metrics-row {
+  display: grid !important;
+  grid-template-columns: repeat(2, 1fr) !important;
+  gap: 16px !important;
+}
+
+.pdf-export-mode .metric-card,
+.pdf-export-mode .bias-mitigation-summary,
+.pdf-export-mode .dynamic-bias-analysis,
+.pdf-export-mode .transcript-box {
+  break-inside: avoid !important;
+}
+
+/* ============================================================
+   PRINT STYLES FOR PDF GENERATION
+   ============================================================ */
+
+@media print {
+  @page {
+    size: A4;
+    margin: 12mm 10mm;
+  }
+
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+  }
+
+  body {
+    background: white !important;
+    color: #1a1a1a !important;
+    font-family: var(--font-mono), 'SF Mono', 'Menlo', monospace !important;
+    font-size: 10pt !important;
+    line-height: 1.4 !important;
+  }
+
+  /* Hide web-only elements */
+  nav,
+  [data-html2canvas-ignore="true"],
+  button:not(.print-visible),
+  .no-print,
+  .grid-bg {
+    display: none !important;
+  }
+
+  /* Ensure report container fills page */
+  #equity-report {
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    background: white !important;
+  }
+
+  /* Force all content to be visible */
+  .equity-report-container {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  /* Prevent page breaks inside key elements */
+  .metric-card,
+  .audit-map-section,
+  .audit-bias-section,
+  .dynamic-bias-analysis,
+  .bias-mitigation-summary,
+  .india-map-container,
+  .transcript-box,
+  .audit-report-header {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+
+  /* Audit Report Header */
+  .audit-report-header {
+    border-bottom: 2px solid #0f8b7f !important;
+    margin-bottom: 16px !important;
+    padding-bottom: 12px !important;
+  }
+
+  .audit-main-title {
+    font-size: 20pt !important;
+    color: #1a1a1a !important;
+    margin-bottom: 6px !important;
+  }
+
+  .audit-sdg-badge {
+    background: #f5f5f5 !important;
+    border: 1px solid #ccc !important;
+    padding: 4px 8px !important;
+    border-radius: 4px !important;
+  }
+
+  /* Metrics Row - force 4 columns */
+  .metrics-row {
+    display: grid !important;
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 12px !important;
+    margin-bottom: 16px !important;
+  }
+
+  .metric-card {
+    background: #fafafa !important;
+    border: 1px solid #e0e0e0 !important;
+    border-radius: 6px !important;
+    padding: 12px !important;
+    text-align: center !important;
+  }
+
+  .metric-label {
+    font-size: 7pt !important;
+    color: #666 !important;
+    margin-bottom: 4px !important;
+  }
+
+  .metric-value {
+    font-size: 18pt !important;
+    font-weight: 700 !important;
+    color: #0f8b7f !important;
+  }
+
+  .metric-bar-bg {
+    height: 3px !important;
+    background: #eee !important;
+    margin-top: 6px !important;
+  }
+
+  /* Content Grid - force side by side */
+  .audit-content-grid {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 16px !important;
+    margin-bottom: 16px !important;
+    width: 100% !important;
+  }
+
+  .audit-map-section,
+  .audit-bias-section {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  /* Section titles */
+  .section-title {
+    font-size: 8pt !important;
+    color: #666 !important;
+    margin-bottom: 8px !important;
+  }
+
+  /* Bias Analysis Box */
+  .dynamic-bias-analysis {
+    background: #fafafa !important;
+    border: 1px solid #e0e0e0 !important;
+    border-radius: 6px !important;
+    padding: 12px !important;
+  }
+
+  .bias-analysis-title {
+    font-size: 8pt !important;
+    color: #dc2626 !important;
+    margin-bottom: 8px !important;
+  }
+
+  .bias-detected-accent {
+    font-size: 9pt !important;
+    font-weight: 600 !important;
+    margin-bottom: 8px !important;
+  }
+
+  .bias-issues-list {
+    margin: 0 !important;
+    padding-left: 12px !important;
+  }
+
+  .bias-issue {
+    font-size: 8pt !important;
+    margin-bottom: 4px !important;
+    line-height: 1.4 !important;
+  }
+
+  .bias-mitigation-note {
+    font-size: 8pt !important;
+    margin-top: 8px !important;
+    padding-top: 8px !important;
+    border-top: 1px solid #e0e0e0 !important;
+  }
+
+  /* Map styles */
+  .accent-origin-map {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+
+  .map-wrapper {
+    border: 1px solid #ccc !important;
+    background: white !important;
+    box-shadow: none !important;
+    border-radius: 6px !important;
+    overflow: hidden !important;
+    max-width: 100% !important;
+  }
+
+  .india-map-svg {
+    width: 100% !important;
+    height: auto !important;
+    max-height: 200px !important;
+  }
+
+  .location-info {
+    font-size: 9pt !important;
+    color: #0f8b7f !important;
+    margin-top: 8px !important;
+  }
+
+  .coordinates {
+    font-size: 7pt !important;
+    color: #666 !important;
+  }
+
+  /* Bias Mitigation Summary */
+  .bias-mitigation-summary {
+    background: #f0faf9 !important;
+    border: 1px solid #0f8b7f !important;
+    border-radius: 6px !important;
+    padding: 12px !important;
+    margin-top: 12px !important;
+  }
+
+  .mitigation-badge {
+    background: #e6f4f3 !important;
+    border: 1px solid #0f8b7f !important;
+    color: #0f8b7f !important;
+    font-size: 7pt !important;
+    padding: 2px 6px !important;
+    border-radius: 3px !important;
+  }
+
+  .mitigation-title {
+    font-size: 9pt !important;
+    margin: 8px 0 !important;
+  }
+
+  .mitigation-list {
+    margin: 0 !important;
+    padding-left: 12px !important;
+  }
+
+  .mitigation-list li {
+    font-size: 8pt !important;
+    margin-bottom: 4px !important;
+    line-height: 1.3 !important;
+  }
+
+  /* Audit Details Section */
+  .audit-details-section {
+    border-top: 1px solid #ccc !important;
+    padding-top: 16px !important;
+  }
+
+  .section-subtitle {
+    font-size: 8pt !important;
+    color: #666 !important;
+    margin-bottom: 8px !important;
+  }
+
+  .transcript-box {
+    background: #f0faf9 !important;
+    border: 1px solid #0f8b7f !important;
+    border-radius: 6px !important;
+    padding: 12px !important;
+    font-family: var(--font-mono), 'SF Mono', monospace !important;
+    font-size: 9pt !important;
+    line-height: 1.5 !important;
+    margin-bottom: 12px !important;
+  }
+
+  /* Word Risk Heatmap */
+  .word-heatmap-section {
+    margin: 12px 0 !important;
+  }
+
+  .word-heatmap {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 4px !important;
+  }
+
+  .word-risk-pill {
+    border: 1px solid #999 !important;
+    border-radius: 3px !important;
+    padding: 2px 6px !important;
+    font-size: 8pt !important;
+    background: transparent !important;
+  }
+
+  /* XAI Explanation */
+  .xai-explanation {
+    background: #fafafa !important;
+    border-left: 3px solid #0f8b7f !important;
+    padding: 8px 12px !important;
+    font-size: 8pt !important;
+    line-height: 1.4 !important;
+    margin-top: 12px !important;
+  }
+
+  /* Bias Comparison Chart */
+  .bias-comparison-chart {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+
+  /* Language Breakdown Bar */
+  .language-breakdown {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+    margin: 12px 0 !important;
+  }
+
+  /* Equitable Transcript Section */
+  .equitable-transcript-section {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+    margin: 12px 0 !important;
+  }
+
+  /* Page break utilities */
+  .page-break-before {
+    page-break-before: always;
+  }
+
+  .page-break-after {
+    page-break-after: always;
+  }
+
+  .avoid-break {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+}
+
+/* ============================================================
+   WEB VIEW STYLES
+   ============================================================ */
+
+/* Audit Report specific styles for web view */
+.audit-report-header {
+  border-bottom: 2px solid var(--teal);
+  padding-bottom: 16px;
+  margin-bottom: 20px;
+}
+
+.audit-branding-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.audit-logo {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  color: var(--text-primary);
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
+
+.audit-badge {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--text-secondary);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.audit-sdg-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background: rgba(20,184,166,0.08);
+  border: 1px solid rgba(20,184,166,0.25);
+  border-radius: 6px;
+}
+
+.sdg-number {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--teal);
+}
+
+.sdg-label {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--text-secondary);
+  letter-spacing: 0.05em;
+}
+
+.audit-title-row {
+  margin-top: 8px;
+}
+
+.audit-main-title {
+  font-family: var(--font-serif), Georgia, serif;
+  font-size: clamp(24px, 5vw, 36px);
+  font-weight: 400;
+  color: var(--text-primary);
+  letter-spacing: -0.02em;
+  margin: 0 0 8px 0;
+  line-height: 1.2;
+}
+
+.audit-meta {
+  font-family: var(--font-mono);
+  font-size: clamp(9px, 1.8vw, 11px);
+  color: var(--text-secondary);
+  letter-spacing: 0.02em;
+}
+
+.audit-meta-sep {
+  margin: 0 8px;
+  color: var(--border);
+}
+
+.metrics-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.metric-card {
+  background: rgba(0,0,0,0.02);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.metric-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+.metric-label {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--text-secondary);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.metric-value {
+  font-family: var(--font-mono);
+  font-size: 28px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.metric-bar-bg {
+  height: 3px;
+  background: rgba(0,0,0,0.06);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.metric-bar-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.audit-content-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+.audit-map-section,
+.audit-bias-section {
+  min-width: 0;
+}
+
+.section-title {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-secondary);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin: 0 0 12px 0;
+  font-weight: 600;
+}
+
+.dynamic-bias-analysis {
+  background: rgba(220,38,38,0.04);
+  border: 1px solid rgba(220,38,38,0.15);
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.bias-analysis-title {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--red);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin: 0 0 12px 0;
+}
+
+.bias-detected-accent {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 12px;
+  font-style: italic;
+}
+
+.bias-issues-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.bias-issue {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 8px;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.bias-issue-marker {
+  font-size: 8px;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.bias-issue-critical .bias-issue-marker { color: var(--red); }
+.bias-issue-warning .bias-issue-marker { color: var(--amber); }
+.bias-issue-info .bias-issue-marker { color: var(--teal); }
+
+.bias-issue-critical { color: #7f1d1d; }
+.bias-issue-warning { color: var(--text-secondary); }
+.bias-issue-info { color: var(--text-secondary); }
+
+.bias-mitigation-note {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(220,38,38,0.1);
+  font-size: 10px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+
+.mitigation-label {
+  font-weight: 600;
+  color: var(--teal);
+  margin-right: 4px;
+}
+
+.audit-details-section {
+  border-top: 1px solid var(--border);
+  padding-top: 24px;
+}
+
+.section-subtitle {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-secondary);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin: 0 0 10px 0;
+}
+
+.equitable-transcript-section {
+  margin: 24px 0;
+}
+
+.transcript-box {
+  background: rgba(20,184,166,0.06);
+  border: 1px solid rgba(20,184,166,0.15);
+  border-radius: 8px;
+  padding: 16px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--text-primary);
+  line-height: 1.7;
+  font-style: italic;
+}
+
+.word-heatmap-section {
+  margin: 24px 0;
+}
+
+.word-heatmap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.word-risk-pill {
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  cursor: default;
+  transition: transform 0.15s ease;
+}
+
+.word-risk-pill:hover {
+  transform: translateY(-1px);
+}
+
+.xai-explanation {
+  margin-top: 20px;
+  padding: 12px 16px;
+  background: rgba(0,0,0,0.02);
+  border-left: 3px solid var(--teal);
+  border-radius: 0 4px 4px 0;
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+@media (max-width: 768px) {
+  .audit-content-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .metrics-row {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .audit-branding-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+@media (max-width: 480px) {
+  .metrics-row {
+    grid-template-columns: 1fr;
+  }
+
+  .audit-main-title {
+    font-size: 20px;
   }
 }
 

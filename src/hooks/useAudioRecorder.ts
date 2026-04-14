@@ -26,12 +26,41 @@ const MOCK_AUDIT_DATA = {
   },
 };
 
+interface AuditData {
+  transcript: string;
+  word_risks: Array<{
+    word: string;
+    risk: number;
+    language: string;
+  }>;
+  audit: {
+    accent_identified: string;
+    features: string;
+    potential_bias_analysis: string;
+  };
+  equity_score: number;
+  xai_explanation: string;
+  scorecard: {
+    phonetic_accuracy: number;
+    lexical_fairness: number;
+    contextual_equity: number;
+    overall_bias_risk: number;
+  };
+}
+
+interface RepairData {
+  original: string;
+  repaired: string;
+  explanation: string;
+}
+
+
 export const useAudioRecorder = () => {
   const [isRecording, setIsRecording] = useState(false);
-  const [auditData, setAuditData] = useState<any>(null);
+  const [auditData, setAuditData] = useState<AuditData | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [pipelineStage, setPipelineStage] = useState(-1);
-  const [repairData, setRepairData] = useState<any>(null);
+  const [repairData, setRepairData] = useState<RepairData | null>(null);
   const [isGeneratingRepair, setIsGeneratingRepair] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
   const [micPermissionDenied, setMicPermissionDenied] = useState(false);
@@ -74,7 +103,7 @@ export const useAudioRecorder = () => {
     const ext = processType.includes('mp3') ? 'mp3' : processType.includes('wav') ? 'wav' : 'webm';
     formData.append('audio', blob, `audio.${ext}`);
 
-    let finalResultData: any = null;
+    let finalResultData: AuditData | null = null;
     let finalError: string | null = null;
     let isApiDone = false;
 
@@ -172,7 +201,7 @@ export const useAudioRecorder = () => {
               setLatencyInfo(healthData.latencyMs.toString());
             }
           }
-        } catch (e) {
+        } catch {
           // Silently ignore health check failures
         }
       }
@@ -202,7 +231,7 @@ export const useAudioRecorder = () => {
                setMicPermissionDenied(false);
              }
           };
-        } catch (_err) {
+        } catch {
           // Safari fallback gracefully
         }
       }
@@ -223,8 +252,8 @@ export const useAudioRecorder = () => {
 
       mediaRecorder.current.start();
       setIsRecording(true);
-    } catch (err: any) {
-      if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+    } catch (err: unknown) {
+      if (err instanceof Error && (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError')) {
         setMicPermissionDenied(true);
       } else {
         console.error('Microphone access error:', err);
@@ -267,12 +296,12 @@ export const useAudioRecorder = () => {
           setLatencyInfo(healthData.latencyMs.toString());
         }
       }
-    } catch (e) {
+    } catch {
       // Silently ignore
     }
   };
 
-  const generateContextualRepair = async () => {
+  const generateContextualRepair = useCallback(async () => {
     if (!auditData) return;
 
     setIsGeneratingRepair(true);
@@ -299,7 +328,7 @@ export const useAudioRecorder = () => {
     } finally {
       setIsGeneratingRepair(false);
     }
-  };
+  }, [auditData]);
 
   const dismissMicPopup = () => setMicPermissionDenied(false);
 

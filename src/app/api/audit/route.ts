@@ -6,12 +6,45 @@ import { NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { SpeechClient } from '@google-cloud/speech';
 
-const fetchWithRetry = async (model: any, requestConfig: any, retries = 3, delay = 1000, emit?: (payload: unknown) => void) => {
+interface AuditData {
+  transcript?: string;
+  word_risks?: Array<{
+    word: string;
+    risk: number;
+    language: string;
+  }>;
+  equity_score?: number;
+  audit?: {
+    accent_identified?: string;
+    features?: string;
+    potential_bias_analysis?: string;
+  };
+  scorecard?: {
+    phonetic_accuracy: number;
+    lexical_fairness: number;
+    contextual_equity: number;
+    overall_bias_risk: number;
+  };
+  xai_explanation?: string;
+  _meta?: {
+    transcription_source: string;
+    chirp_transcript: string | null;
+  };
+}
+
+const fetchWithRetry = async (
+  model: ReturnType<GoogleGenerativeAI['getGenerativeModel']>,
+  requestConfig: Parameters<ReturnType<GoogleGenerativeAI['getGenerativeModel']>['generateContent']>[0],
+  retries = 3,
+  delay = 1000,
+  emit?: (payload: unknown) => void
+) => {
   for (let i = 0; i < retries; i++) {
     try {
       return await model.generateContent(requestConfig);
-    } catch (error: any) {
-      if (error.status === 503 && i < retries - 1) {
+    } catch (error: unknown) {
+      const err = error as { status?: number; message?: string };
+      if (err.status === 503 && i < retries - 1) {
         console.warn(`503 Error. Retrying in ${delay}ms... (Attempt ${i + 1} of ${retries})`);
         // Emit retry event
         if (emit) {
@@ -24,6 +57,7 @@ const fetchWithRetry = async (model: any, requestConfig: any, retries = 3, delay
       }
     }
   }
+  throw new Error('Max retries reached');
 };
 
 // Initialize Speech client with credentials from environment variable
@@ -73,15 +107,17 @@ const transcribeWithChirp = async (
       config: config,
     };
 
-    const [response] = await (client.recognize(request) as Promise<[{ results?: Array<{ alternatives?: Array<{ transcript?: string }> }> }, any, any]>);
+    const recognizeResponse = await client.recognize(request);
+    const [response] = (recognizeResponse as unknown) as [{ results?: Array<{ alternatives?: Array<{ transcript?: string }> }> }];
     const transcription = response.results
       ?.map((result) => result.alternatives?.[0]?.transcript || '')
       .join(' ') || '';
 
     return { transcript: transcription, success: true };
-  } catch (error: any) {
-    console.error('Speech-to-Text error:', error);
-    return { transcript: '', success: false, error: error.message };
+   } catch (error: unknown) {
+    const err = error as { message?: string };
+    console.error('Speech-to-Text error:', err);
+    return { transcript: '', success: false, error: err.message || 'Unknown error' };
   }
 };
 
@@ -179,11 +215,11 @@ Return nothing else. No markdown, no explanation.`;
 
         emit({ type: 'stage', stage: 3, meta: { model: 'gemini-2.5-flash', provider: 'vertex-ai' } });
 
-        const result = await fetchWithRetry(model, requestConfig, 3, 1000, emit);
-        const response = await result.response;
-        const text = response.text();
+        const fetchResult = await fetchWithRetry(model, requestConfig, 3, 1000, emit);
+        const responseText = await fetchResult.response;
+        const text = responseText.text();
 
-        let jsonResult: any;
+        let jsonResult: AuditData;
         try {
           jsonResult = JSON.parse(text);
           // Include transcription metadata in result
@@ -193,7 +229,7 @@ Return nothing else. No markdown, no explanation.`;
           };
         } catch (parseError) {
           console.error('JSON Parse Error:', text, parseError);
-          jsonResult = { transcript: 'Parse failed', audit: text };
+          jsonResult = { transcript: 'Parse failed', audit: { features: text } } as AuditData;
         }
 
         emit({ type: 'stage', stage: 4 });

@@ -1,12 +1,18 @@
 import { NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
-const fetchWithRetry = async (model: any, requestConfig: any, retries = 3, delay = 1000) => {
+const fetchWithRetry = async (
+  model: ReturnType<GoogleGenerativeAI['getGenerativeModel']>,
+  requestConfig: Parameters<ReturnType<GoogleGenerativeAI['getGenerativeModel']>['generateContent']>[0],
+  retries = 3,
+  delay = 1000
+) => {
   for (let i = 0; i < retries; i++) {
     try {
       return await model.generateContent(requestConfig);
-    } catch (error: any) {
-      if (error.status === 503 && i < retries - 1) {
+    } catch (error: unknown) {
+      const err = error as { status?: number; message?: string };
+      if (err.status === 503 && i < retries - 1) {
         console.warn(`503 Error. Retrying in ${delay}ms... (Attempt ${i + 1} of ${retries})`);
         await new Promise(res => setTimeout(res, delay));
         delay *= 2;
@@ -15,6 +21,7 @@ const fetchWithRetry = async (model: any, requestConfig: any, retries = 3, delay
       }
     }
   }
+  throw new Error('Max retries reached');
 };
 
 export async function POST(request: Request) {
@@ -39,7 +46,7 @@ Given this original transcript and audit data:
 - Transcript: "${transcript}"
 - Identified Accent: ${audit?.accent_identified || 'Unknown'}
 - Phonetic Features: ${audit?.features || 'Not analyzed'}
-- High-Risk Words: ${word_risks?.map((w: any) => `${w.word} (risk: ${(w.risk * 100).toFixed(0)}%)`).join(', ') || 'None identified'}
+- High-Risk Words: ${word_risks?.map((w: { word: string; risk: number }) => `${w.word} (risk: ${(w.risk * 100).toFixed(0)}%)`).join(', ') || 'None identified'}
 
 Generate a repaired version that:
 1. Preserves the original meaning and intent.
@@ -62,11 +69,11 @@ Return nothing else. No markdown, no explanation.`;
       generationConfig: { responseMimeType: 'application/json' }
     };
 
-    const result = await fetchWithRetry(model, requestConfig);
-    const response = await result.response;
-    const text = response.text();
+    const fetchResult = await fetchWithRetry(model, requestConfig);
+    const responseText = await fetchResult.response;
+    const text = responseText.text();
 
-    let jsonResult: any;
+    let jsonResult: { original: string; repaired: string; explanation: string };
     try {
       jsonResult = JSON.parse(text);
     } catch (parseError) {
