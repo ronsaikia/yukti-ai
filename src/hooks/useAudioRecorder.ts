@@ -41,8 +41,9 @@ export const useAudioRecorder = () => {
   const mediaRecorder = useRef<MediaRecorder | null>(null);
   const chunks = useRef<Blob[]>([]);
   const lastBlobRef = useRef<Blob | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
 
-  const resetAudit = () => {
+  const resetAudit = useCallback(() => {
     setAuditData(null);
     setRepairData(null);
     setPipelineStage(-1);
@@ -55,55 +56,11 @@ export const useAudioRecorder = () => {
     if (mediaRecorder.current && mediaRecorder.current.stream) {
       mediaRecorder.current.stream.getTracks().forEach(track => track.stop());
     }
-  };
-
-  const startRecording = async () => {
-    resetAudit();
-
-    try {
-      // Explicit Hardware Checking
-      if (navigator.permissions && navigator.permissions.query) {
-        try {
-          const permissionStatus = await navigator.permissions.query({ name: 'microphone' as PermissionName });
-          if (permissionStatus.state === 'denied') {
-            setMicPermissionDenied(true);
-            return;
-          }
-          permissionStatus.onchange = () => {
-             if (permissionStatus.state === 'denied') {
-               setMicPermissionDenied(true);
-             } else if (permissionStatus.state === 'granted') {
-               setMicPermissionDenied(false);
-             }
-          };
-        } catch (_err) {
-          // Safari fallback gracefully
-        }
-      }
-
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      setMicPermissionDenied(false);
-
-      mediaRecorder.current = new MediaRecorder(stream);
-      chunks.current = [];
-
-      mediaRecorder.current.ondataavailable = (e) => chunks.current.push(e.data);
-      mediaRecorder.current.onstop = async () => {
-        const blob = new Blob(chunks.current, { type: 'audio/webm' });
-        lastBlobRef.current = blob;
-        await processAudioBlob(blob, 'audio/webm');
-      };
-
-      mediaRecorder.current.start();
-      setIsRecording(true);
-    } catch (err: any) {
-      if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
-        setMicPermissionDenied(true);
-      } else {
-        console.error('Microphone access error:', err);
-      }
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
     }
-  };
+    streamRef.current = null;
+  }, []);
 
   const processAudioBlob = useCallback(async (blob: Blob, processType: string = 'audio/webm') => {
     setIsProcessing(true);
@@ -226,10 +183,59 @@ export const useAudioRecorder = () => {
     }
   }, []);
 
-  const stopRecording = () => {
+  const startRecording = useCallback(async () => {
+    resetAudit();
+
+    try {
+      // Explicit Hardware Checking
+      if (navigator.permissions && navigator.permissions.query) {
+        try {
+          const permissionStatus = await navigator.permissions.query({ name: 'microphone' as PermissionName });
+          if (permissionStatus.state === 'denied') {
+            setMicPermissionDenied(true);
+            return;
+          }
+          permissionStatus.onchange = () => {
+             if (permissionStatus.state === 'denied') {
+               setMicPermissionDenied(true);
+             } else if (permissionStatus.state === 'granted') {
+               setMicPermissionDenied(false);
+             }
+          };
+        } catch (_err) {
+          // Safari fallback gracefully
+        }
+      }
+
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      streamRef.current = stream;
+      setMicPermissionDenied(false);
+
+      mediaRecorder.current = new MediaRecorder(stream);
+      chunks.current = [];
+
+      mediaRecorder.current.ondataavailable = (e) => chunks.current.push(e.data);
+      mediaRecorder.current.onstop = async () => {
+        const blob = new Blob(chunks.current, { type: 'audio/webm' });
+        lastBlobRef.current = blob;
+        await processAudioBlob(blob, 'audio/webm');
+      };
+
+      mediaRecorder.current.start();
+      setIsRecording(true);
+    } catch (err: any) {
+      if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+        setMicPermissionDenied(true);
+      } else {
+        console.error('Microphone access error:', err);
+      }
+    }
+  }, [resetAudit, processAudioBlob]);
+
+  const stopRecording = useCallback(() => {
     mediaRecorder.current?.stop();
     setIsRecording(false);
-  };
+  }, []);
 
   // Demo mode to show results with mock data
   const startDemo = async () => {
@@ -316,5 +322,6 @@ export const useAudioRecorder = () => {
     retryInfo,
     lastBlobRef,
     latencyInfo,
+    streamRef,
   };
 };

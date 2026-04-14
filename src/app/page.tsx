@@ -103,35 +103,58 @@ function ScoreRing({ score, size = 80, label }: { score: number; size?: number; 
 
 // ─── Northeast India Map SVG ─────────────────────────────────────────────────
 function NortheastIndiaMap() {
-  // Simplified SVG paths for Indian regions
-  // Northeast states roughly highlighted
   return (
-    <svg width="160" height="180" viewBox="0 0 160 180" style={{ display: 'block' }}>
-      {/* Base India outline - simplified */}
-      <path
-        d="M50,140 Q40,130 35,110 Q30,90 40,70 Q50,50 70,45 Q90,40 110,50 Q130,60 135,80 Q140,100 130,120 Q120,140 100,145 Q80,150 60,145 Z"
-        fill="rgba(0,0,0,0.06)"
-        stroke="rgba(0,0,0,0.1)"
-        strokeWidth="1"
-      />
-      {/* Northeast region highlight */}
-      <path
-        d="M115,50 Q125,45 130,35 Q135,25 130,15 Q125,5 115,8 Q105,10 100,20 Q95,30 100,40 Q105,50 115,50 Z"
-        fill="var(--teal)"
-        fillOpacity="0.3"
-        stroke="var(--teal)"
-        strokeWidth="1.5"
-      />
-      {/* Pulsing dot on Guwahati area */}
-      <circle cx="115" cy="35" r="3" fill="var(--teal)">
-        <animate attributeName="r" values="3;5;3" dur="2s" repeatCount="indefinite" />
-        <animate attributeName="opacity" values="1;0.5;1" dur="2s" repeatCount="indefinite" />
-      </circle>
-      {/* Labels */}
-      <text x="115" y="65" textAnchor="middle" fontSize="8" fill="var(--text-secondary)" fontFamily="var(--font-mono)">
+    <div>
+      <svg
+        width={180}
+        height={144}
+        viewBox="0 0 200 160"
+        style={{ display: 'block' }}
+        aria-label="Schematic map of Assam state"
+      >
+        {/* Assam state outline */}
+        <path
+          d="M30,60 L130,55 L150,90 L120,110 L40,105 Z"
+          fill="rgba(20,184,166,0.08)"
+          stroke="rgba(20,184,166,0.5)"
+          strokeWidth={1.5}
+        />
+
+        {/* Guwahati dot with pulse animation */}
+        <circle cx="70" cy="85" r="3" fill="var(--teal)">
+          <animate attributeName="r" values="3;6;3" dur="2s" repeatCount="indefinite" />
+          <animate attributeName="opacity" values="1;0.3;1" dur="2s" repeatCount="indefinite" />
+        </circle>
+
+        {/* Jorhat dot */}
+        <circle cx="115" cy="72" r="3" fill="var(--teal)" />
+
+        {/* Silchar dot */}
+        <circle cx="95" cy="100" r="3" fill="var(--teal)" />
+
+        {/* Guwahati label */}
+        <text x="70" y="98" fontSize="9" fontFamily="var(--font-mono)" fill="rgba(0,0,0,0.5)" textAnchor="middle">
+          Guwahati
+        </text>
+
+        {/* Assam label */}
+        <text x="90" y="45" fontSize="9" fontFamily="var(--font-mono)" fill="rgba(0,0,0,0.5)" textAnchor="middle">
+          Assam
+        </text>
+      </svg>
+
+      {/* Top label */}
+      <div style={{
+        fontFamily: 'var(--font-mono)',
+        fontSize: 8,
+        color: 'var(--text-secondary)',
+        textAlign: 'center',
+        marginTop: 8,
+        letterSpacing: '0.04em',
+      }}>
         Northeast India
-      </text>
-    </svg>
+      </div>
+    </div>
   );
 }
 
@@ -147,12 +170,22 @@ function LanguageBreakdownBar({ wordRisks }: { wordRisks: any[] }) {
   });
 
   const total = wordRisks.length || 1;
-  const percentages = {
-    en: Math.round((counts.en / total) * 100),
-    hi: Math.round((counts.hi / total) * 100),
-    as: Math.round((counts.as / total) * 100),
-    other: Math.round((counts.other / total) * 100),
+  // Largest-remainder algorithm to ensure percentages sum to 100
+  const rawPcts = {
+    en: (counts.en / total) * 100,
+    hi: (counts.hi / total) * 100,
+    as: (counts.as / total) * 100,
+    other: (counts.other / total) * 100,
   };
+  // Floor all values
+  const floored = Object.fromEntries(Object.entries(rawPcts).map(([k, v]) => [k, Math.floor(v)]));
+  // Distribute remainder to largest fractional parts
+  const remainder = 100 - Object.values(floored).reduce((a, b) => a + b, 0);
+  const sorted = Object.entries(rawPcts)
+    .map(([k, v]) => ({ k, frac: v - Math.floor(v) }))
+    .sort((a, b) => b.frac - a.frac);
+  for (let i = 0; i < remainder; i++) floored[sorted[i].k]++;
+  const percentages = floored as Record<string, number>;
 
   const colors = {
     en: 'var(--teal)',
@@ -255,6 +288,9 @@ function BiasComparisonChart({ equityScore }: { equityScore: number }) {
   const standardAsrScore = 21; // Hardcoded value as specified
   const yuktiScore = Math.round(equityScore * 100);
   const maxHeight = 120;
+  // Correct: normalize score (0-100) to bar height
+  const standardBarHeight = Math.round((standardAsrScore / 100) * maxHeight);
+  const yuktiBarHeight = Math.round((yuktiScore / 100) * maxHeight);
 
   return (
     <div style={{ marginTop: 'clamp(20px, 4vw, 32px)', marginBottom: 'clamp(16px, 4vw, 24px)' }}>
@@ -273,16 +309,16 @@ function BiasComparisonChart({ equityScore }: { equityScore: number }) {
         {/* Standard ASR Bar (Left) */}
         <rect
           x="30"
-          y={maxHeight - standardAsrScore}
+          y={maxHeight - standardBarHeight}
           width="50"
-          height={standardAsrScore}
+          height={standardBarHeight}
           fill="var(--red)"
           rx="4"
           fillOpacity="0.8"
         />
         <text
           x="55"
-          y={maxHeight - standardAsrScore - 8}
+          y={maxHeight - standardBarHeight - 8}
           textAnchor="middle"
           fontSize="14"
           fontWeight="700"
@@ -305,15 +341,15 @@ function BiasComparisonChart({ equityScore }: { equityScore: number }) {
         {/* Yukti Bar (Right) */}
         <rect
           x="120"
-          y={maxHeight - yuktiScore}
+          y={maxHeight - yuktiBarHeight}
           width="50"
-          height={yuktiScore}
+          height={yuktiBarHeight}
           fill="var(--teal)"
           rx="4"
         />
         <text
           x="145"
-          y={maxHeight - yuktiScore - 8}
+          y={maxHeight - yuktiBarHeight - 8}
           textAnchor="middle"
           fontSize="14"
           fontWeight="700"
@@ -401,42 +437,21 @@ function ResearchBasis() {
 // ─── Loading Skeletons ─────────────────────────────────────────────────────────
 function LoadingSkeletons() {
   return (
-    <div style={{
-      width: '100%',
-      maxWidth: 'clamp(280px, 90vw, 860px)',
-      marginTop: 'clamp(20px, 4vw, 32px)',
-    }}>
-      <div style={{
-        height: 'clamp(16px, 3vw, 20px)',
-        width: '80%',
-        background: 'rgba(255,255,255,0.04)',
-        borderRadius: 4,
-        marginBottom: 'clamp(12px, 3vw, 16px)',
-        animation: 'shimmer 1.5s ease-in-out infinite',
-      }} />
-      <div style={{
-        height: 'clamp(12px, 2.5vw, 14px)',
-        width: '60%',
-        background: 'rgba(255,255,255,0.04)',
-        borderRadius: 4,
-        marginBottom: 'clamp(12px, 3vw, 16px)',
-        animation: 'shimmer 1.5s ease-in-out infinite',
-        animationDelay: '0.1s',
-      }} />
-      <div style={{
-        height: 'clamp(12px, 2.5vw, 14px)',
-        width: '90%',
-        background: 'rgba(255,255,255,0.04)',
-        borderRadius: 4,
-        animation: 'shimmer 1.5s ease-in-out infinite',
-        animationDelay: '0.2s',
-      }} />
-      <style jsx>{`
-        @keyframes shimmer {
-          0%, 100% { opacity: 0.4; }
-          50% { opacity: 0.8; }
-        }
-      `}</style>
+    <div style={{ width: '100%', maxWidth: 'clamp(280px, 90vw, 860px)', marginTop: 'clamp(20px, 4vw, 32px)' }}>
+      {[{ w: '80%', delay: '0s' }, { w: '60%', delay: '0.1s' }, { w: '90%', delay: '0.2s' }].map((s, i) => (
+        <div
+          key={i}
+          className="skeleton-shimmer"
+          style={{
+            height: 'clamp(12px, 2.5vw, 16px)',
+            width: s.w,
+            background: 'rgba(0,0,0,0.06)',
+            borderRadius: 4,
+            marginBottom: 'clamp(12px, 3vw, 16px)',
+            animationDelay: s.delay,
+          }}
+        />
+      ))}
     </div>
   );
 }
@@ -667,7 +682,7 @@ function PipelineVisualizer({
       )}
 
       {/* Status text */}
-      <div style={{ marginTop: 20, height: 24, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div role="status" aria-live="polite" style={{ marginTop: 20, height: 24, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <AnimatePresence mode="wait">
           {isProcessing && activeStage >= 0 && (
             <motion.div
@@ -956,124 +971,8 @@ function EquityReport({ auditData }: { auditData: any }) {
   );
 }
 
-// ─── Official PDF Report Template ──────────────────────────────────────────────
-function OfficialPdfReport({ auditData, repairData }: { auditData: any, repairData: any }) {
-  if (!auditData) return null;
-  const score = Number(auditData.equity_score ?? 0);
-  const displayNum = Math.round(score * 100);
-  const scoreColor = score >= 0.7 ? '#14b8a6' : score >= 0.4 ? '#f59e0b' : '#ef4444';
-
-  const radius = 32;
-  const circumference = 2 * Math.PI * radius;
-  const strokeDashoffset = circumference - (score * circumference);
-
-  return (
-    <div id="official-pdf-report" style={{
-      position: 'absolute', left: '-9999px', top: 0, zIndex: -100,
-      width: 800, padding: 64,
-      background: '#ffffff', color: '#111827',
-      fontFamily: 'system-ui, -apple-system, sans-serif'
-    }}>
-      {/* Header */}
-      <div style={{ borderBottom: '1px solid #e5e7eb', paddingBottom: 32, marginBottom: 40, textAlign: 'center' }}>
-        <h1 style={{ fontSize: 28, fontWeight: 400, margin: '0 0 20px 0', letterSpacing: '-0.02em', color: '#111827', fontFamily: 'Georgia, serif' }}>
-          OFFICIAL LINGUISTIC EQUITY REPORT
-        </h1>
-        <div style={{ display: 'flex', justifyContent: 'center', gap: 40, fontSize: 10, color: '#4b5563', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <span style={{ color: '#9ca3af' }}>SESSION ID</span>
-            <span style={{ fontWeight: 600 }}>YUK-2651-A</span>
-          </div>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <span style={{ color: '#9ca3af' }}>DATE</span>
-            <span style={{ fontWeight: 600 }}>2026</span>
-          </div>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <span style={{ color: '#9ca3af' }}>MODEL</span>
-            <span style={{ fontWeight: 600 }}>GEMINI 2.5 FLASH</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Score */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 32, padding: '32px 40px', background: '#fafafa', borderRadius: 16, border: '1px solid #f3f4f6', marginBottom: 40 }}>
-        <div style={{ position: 'relative', width: 80, height: 80, flexShrink: 0 }}>
-          <svg width="80" height="80">
-            <circle cx="40" cy="40" r={radius} stroke="#e5e7eb" strokeWidth="6" fill="transparent" />
-            <circle cx="40" cy="40" r={radius} stroke={scoreColor} strokeWidth="6" fill="transparent"
-                    strokeDasharray={circumference} strokeDashoffset={strokeDashoffset}
-                    transform="rotate(-90 40 40)"
-                    strokeLinecap="round" />
-            <text x="40" y="40" dominantBaseline="middle" textAnchor="middle" fontSize="20" fill="#111827" fontWeight="bold" fontFamily="monospace">
-              {displayNum}
-            </text>
-          </svg>
-        </div>
-        <div>
-          <div style={{ fontSize: 18, fontWeight: 600, color: '#111827', marginBottom: 8 }}>
-            Systemic Fairness Scorecard
-          </div>
-          <div style={{ fontSize: 13, color: '#4b5563', lineHeight: 1.6 }}>
-            A composite evaluation mapping phonetic accuracy, lexical fairness, and bias resilience. The gauge reflects the AI system&apos;s ability to maintain equity across regional dialects.
-          </div>
-        </div>
-      </div>
-
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 32, marginBottom: 40 }}>
-        {/* Identified Dialect */}
-        <div style={{ padding: 32, background: '#f8fafc', border: '1px solid #f1f5f9', borderRadius: 16 }}>
-          <div style={{ fontSize: 10, fontWeight: 600, color: '#64748b', textTransform: 'uppercase', marginBottom: 16, letterSpacing: '0.1em' }}>
-            Identified Dialect Profile
-          </div>
-          <div style={{ fontSize: 15, color: '#0f172a', lineHeight: 1.6, fontFamily: 'Georgia, serif' }}>
-            {auditData.audit?.accent_identified || 'Standard English mapping'}
-          </div>
-        </div>
-        {/* Bias Risk */}
-        <div style={{ padding: 32, background: '#fff1f2', border: '1px solid #ffe4e6', borderRadius: 16 }}>
-          <div style={{ fontSize: 10, fontWeight: 600, color: '#e11d48', textTransform: 'uppercase', marginBottom: 16, letterSpacing: '0.1em' }}>
-            Phonetic Bias Risk
-          </div>
-          <div style={{ fontSize: 14, color: '#9f1239', lineHeight: 1.6, fontFamily: 'Georgia, serif' }}>
-            {auditData.audit?.potential_bias_analysis || auditData.xai_explanation || 'No substantial risk metrics detected.'}
-          </div>
-        </div>
-      </div>
-
-      {/* Transcripts Table */}
-      <div style={{ marginBottom: 40 }}>
-        <div style={{ fontSize: 15, fontWeight: 600, color: '#111827', marginBottom: 16 }}>Equitable Transcript Comparison</div>
-        <div style={{ border: '1px solid #e5e7eb', borderRadius: 16, overflow: 'hidden' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', background: '#f9fafb', borderBottom: '1px solid #e5e7eb' }}>
-            <div style={{ padding: '16px 24px', fontSize: 10, fontWeight: 600, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.1em', borderRight: '1px solid #e5e7eb' }}>
-              Original Capture
-            </div>
-            <div style={{ padding: '16px 24px', fontSize: 10, fontWeight: 600, color: '#0f766e', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
-              Contextual Repair
-            </div>
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr' }}>
-            <div style={{ padding: '32px 24px', fontSize: 14, color: '#4b5563', fontFamily: 'Georgia, serif', whiteSpace: 'pre-wrap', borderRight: '1px solid #e5e7eb', lineHeight: 1.8, background: '#ffffff', wordBreak: 'break-word' }}>
-              &quot;{repairData ? repairData.original : auditData.transcript}&quot;
-            </div>
-            <div style={{ padding: '32px 24px', fontSize: 14, color: '#0f766e', fontFamily: 'Georgia, serif', whiteSpace: 'pre-wrap', lineHeight: 1.8, background: '#f0fdfa', wordBreak: 'break-word' }}>
-              &quot;{repairData ? repairData.repaired : 'Pending generation...'}&quot;
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div style={{ marginTop: 64, paddingTop: 32, borderTop: '1px solid #f3f4f6', textAlign: 'center' }}>
-        <div style={{ fontSize: 9, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.15em' }}>
-          GENERATED BY YUKTI AI · PROMOTING SDG 10.3 LINGUISTIC INCLUSION
-        </div>
-      </div>
-    </div>
-  );
-}
-
 // ─── Waveform Visualizer Canvas ───────────────────────────────────────────────
-function WaveformVisualizer({ isRecording }: { isRecording: boolean }) {
+function WaveformVisualizer({ stream }: { stream: MediaStream | null }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
@@ -1081,7 +980,7 @@ function WaveformVisualizer({ isRecording }: { isRecording: boolean }) {
   const animationRef = useRef<number | null>(null);
 
   useEffect(() => {
-    if (!isRecording) {
+    if (!stream) {
       // Cleanup
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current);
@@ -1102,72 +1001,67 @@ function WaveformVisualizer({ isRecording }: { isRecording: boolean }) {
       return;
     }
 
-    // Setup Web Audio API
-    const setupAudio = async () => {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        const audioContext = new AudioContext();
-        const analyser = audioContext.createAnalyser();
-        analyser.fftSize = 256;
-        analyser.smoothingTimeConstant = 0.8;
+    // Setup Web Audio API using the passed stream directly
+    try {
+      const audioContext = new AudioContext();
+      const analyser = audioContext.createAnalyser();
+      analyser.fftSize = 256;
+      analyser.smoothingTimeConstant = 0.8;
 
-        const source = audioContext.createMediaStreamSource(stream);
-        source.connect(analyser);
+      const source = audioContext.createMediaStreamSource(stream);
+      source.connect(analyser);
 
-        audioContextRef.current = audioContext;
-        analyserRef.current = analyser;
-        sourceRef.current = source;
+      audioContextRef.current = audioContext;
+      analyserRef.current = analyser;
+      sourceRef.current = source;
 
-        const canvas = canvasRef.current;
-        if (!canvas) return;
+      const canvas = canvasRef.current;
+      if (!canvas) return;
 
-        const ctx = canvas.getContext('2d');
-        if (!ctx) return;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
 
-        const bufferLength = analyser.frequencyBinCount;
-        const dataArray = new Uint8Array(bufferLength);
+      const bufferLength = analyser.frequencyBinCount;
+      const dataArray = new Uint8Array(bufferLength);
 
-        const draw = () => {
-          if (!analyserRef.current || !canvas) return;
+      const draw = () => {
+        if (!analyserRef.current || !canvas) return;
 
-          analyserRef.current.getByteTimeDomainData(dataArray);
+        analyserRef.current.getByteTimeDomainData(dataArray);
 
-          ctx.fillStyle = 'rgba(0, 0, 0, 0)';
-          ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = 'rgba(0, 0, 0, 0)';
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-          ctx.lineWidth = 1.5;
-          ctx.strokeStyle = 'var(--teal)';
-          ctx.beginPath();
+        ctx.lineWidth = 1.5;
+        ctx.strokeStyle = 'var(--teal)';
+        ctx.beginPath();
 
-          const sliceWidth = canvas.width / bufferLength;
-          let x = 0;
+        const sliceWidth = canvas.width / bufferLength;
+        let x = 0;
 
-          for (let i = 0; i < bufferLength; i++) {
-            const v = dataArray[i] / 128.0;
-            const y = (v * canvas.height) / 2;
+        for (let i = 0; i < bufferLength; i++) {
+          const v = dataArray[i] / 128.0;
+          const y = (v * canvas.height) / 2;
 
-            if (i === 0) {
-              ctx.moveTo(x, y);
-            } else {
-              ctx.lineTo(x, y);
-            }
-
-            x += sliceWidth;
+          if (i === 0) {
+            ctx.moveTo(x, y);
+          } else {
+            ctx.lineTo(x, y);
           }
 
-          ctx.lineTo(canvas.width, canvas.height / 2);
-          ctx.stroke();
+          x += sliceWidth;
+        }
 
-          animationRef.current = requestAnimationFrame(draw);
-        };
+        ctx.lineTo(canvas.width, canvas.height / 2);
+        ctx.stroke();
 
-        draw();
-      } catch (err) {
-        console.error('Audio setup error:', err);
-      }
-    };
+        animationRef.current = requestAnimationFrame(draw);
+      };
 
-    setupAudio();
+      draw();
+    } catch (err) {
+      console.error('Audio setup error:', err);
+    }
 
     return () => {
       if (animationRef.current) {
@@ -1183,9 +1077,9 @@ function WaveformVisualizer({ isRecording }: { isRecording: boolean }) {
         audioContextRef.current.close();
       }
     };
-  }, [isRecording]);
+  }, [stream]);
 
-  if (!isRecording) return null;
+  if (!stream) return null;
 
   return (
     <motion.canvas
@@ -1223,6 +1117,7 @@ export default function Home() {
     retryInfo,
     lastBlobRef,
     latencyInfo,
+    streamRef,
   } = useAudioRecorder();
   const isComplete = !isProcessing && auditData !== null;
 
@@ -1532,6 +1427,148 @@ export default function Home() {
           )}
         </AnimatePresence>
 
+        {/* Mic button */}
+        <AnimatePresence>
+          {!isProcessing && !isComplete && (
+            <motion.div
+              key="mic"
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.8 }}
+              style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 24, marginBottom: 0 }}
+            >
+              <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                {/* Outer pulse rings */}
+                {isRecording && [1, 2, 3].map((i) => (
+                  <motion.div
+                    key={i}
+                    animate={{ scale: [1, 1.8 + i * 0.3], opacity: [0.3, 0] }}
+                    transition={{ duration: 2, repeat: Infinity, delay: i * 0.4, ease: 'easeOut' }}
+                    style={{
+                      position: 'absolute',
+                      width: 120,
+                      height: 120,
+                      borderRadius: '50%',
+                      border: '1px solid var(--teal)',
+                    }}
+                  />
+                ))}
+
+                {/* Outer container */}
+                <div style={{
+                  width: 120,
+                  height: 120,
+                  borderRadius: '50%',
+                  border: '2px solid rgba(20,184,166,0.3)',
+                  background: 'rgba(20,184,166,0.05)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  position: 'relative',
+                }}>
+                  {/* Inner button */}
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={isRecording ? stopRecording : startRecording}
+                    aria-label={isRecording ? 'Stop recording' : 'Start recording'}
+                    style={{
+                      width: 80,
+                      height: 80,
+                      borderRadius: '50%',
+                      background: isRecording ? 'rgba(20,184,166,0.12)' : 'rgba(255,255,255,0.9)',
+                      border: isRecording ? '2px solid var(--teal)' : '1.5px solid rgba(0,0,0,0.12)',
+                      boxShadow: isRecording ? '0 0 0 8px rgba(20,184,166,0.08)' : 'none',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      cursor: 'pointer',
+                      transition: 'all 0.3s ease',
+                      position: 'absolute',
+                      inset: 0,
+                      margin: 'auto',
+                      outline: 'none',
+                    }}
+                    onFocus={(e) => {
+                      e.currentTarget.style.boxShadow = isRecording ? '0 0 0 8px rgba(20,184,166,0.12)' : '0 0 0 2px var(--teal)';
+                    }}
+                    onBlur={(e) => {
+                      e.currentTarget.style.boxShadow = isRecording ? '0 0 0 8px rgba(20,184,166,0.08)' : 'none';
+                    }}
+                  >
+                    <Mic size={28} style={{ color: isRecording ? 'var(--teal)' : 'rgba(0,0,0,0.35)' }} />
+                  </motion.button>
+                </div>
+
+                {/* Waveform Visualizer */}
+                <WaveformVisualizer stream={isRecording ? streamRef.current : null} />
+              </div>
+
+              {/* Label below outer container */}
+              <div style={{
+                fontFamily: 'var(--font-mono)',
+                fontSize: 10,
+                color: isRecording ? 'var(--teal)' : 'var(--text-muted)',
+                letterSpacing: '0.1em',
+                textTransform: 'uppercase',
+                marginTop: 8,
+              }}>
+                {isRecording ? '● Recording' : 'Press Space or click'}
+              </div>
+
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 'clamp(9px, 2vw, 11px)', color: isRecording ? 'var(--teal)' : 'var(--text-secondary)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 'clamp(2px, 0.5vw, 4px)' }}>
+                  {isRecording ? '◉ Recording — Click to stop' : '○ Click to begin audit'}
+                </div>
+                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 'clamp(8px, 1.5vw, 10px)', color: 'var(--text-secondary)', letterSpacing: '0.06em' }}>
+                  Speak naturally in your regional dialect
+                </div>
+              </div>
+
+              {!isRecording && (
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'clamp(8px, 2vw, 12px)', marginTop: 'clamp(8px, 2vw, 12px)' }}>
+                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 'clamp(12px, 2.5vw, 14px)', fontWeight: 'bold', padding: 'clamp(12px, 3vw, 16px) 0', color: 'var(--text-secondary)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+                    — OR —
+                  </div>
+                  <input
+                    type="file"
+                    accept=".mp3,.wav,.m4a,audio/mp3,audio/wav,audio/m4a,audio/x-m4a"
+                    style={{ display: 'none' }}
+                    ref={fileInputRef}
+                    onChange={handleFileUpload}
+                  />
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 'clamp(4px, 1vw, 8px)',
+                      padding: 'clamp(6px, 1.5vw, 8px) clamp(10px, 2vw, 16px)',
+                      background: 'rgba(0,0,0,0.03)',
+                      border: '1px solid rgba(0,0,0,0.08)',
+                      borderRadius: 6,
+                      color: 'var(--text-secondary)',
+                      fontFamily: 'var(--font-mono)',
+                      fontSize: 'clamp(8px, 1.5vw, 10px)',
+                      letterSpacing: '0.04em',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease',
+                      outline: 'none',
+                    }}
+                    onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(0,0,0,0.15)'; e.currentTarget.style.color = 'var(--text-primary)'; }}
+                    onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(0,0,0,0.08)'; e.currentTarget.style.color = 'var(--text-secondary)'; }}
+                    onFocus={(e) => { e.currentTarget.style.boxShadow = '0 0 0 2px var(--teal)'; }}
+                    onBlur={(e) => { e.currentTarget.style.boxShadow = 'none'; }}
+                  >
+                    <Upload size={12} />
+                    Upload Audio
+                  </button>
+                </div>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         {/* Real-world impact scenario cards */}
         <AnimatePresence>
           {!isProcessing && !isComplete && (
@@ -1596,121 +1633,6 @@ export default function Home() {
                   );
                 })}
               </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Mic button */}
-        <AnimatePresence>
-          {!isProcessing && !isComplete && (
-            <motion.div
-              key="mic"
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.8 }}
-              style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 24, marginBottom: 0 }}
-            >
-              <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                {/* Outer pulse rings */}
-                {isRecording && [1, 2, 3].map((i) => (
-                  <motion.div
-                    key={i}
-                    animate={{ scale: [1, 1.8 + i * 0.3], opacity: [0.3, 0] }}
-                    transition={{ duration: 2, repeat: Infinity, delay: i * 0.4, ease: 'easeOut' }}
-                    style={{
-                      position: 'absolute',
-                      width: 'clamp(48px, 10vw, 88px)',
-                      height: 'clamp(48px, 10vw, 88px)',
-                      borderRadius: '50%',
-                      border: '1px solid var(--teal)',
-                    }}
-                  />
-                ))}
-
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={isRecording ? stopRecording : startRecording}
-                  aria-label={isRecording ? 'Stop recording' : 'Start recording'}
-                  style={{
-                    width: 'clamp(64px, 15vw, 88px)',
-                    height: 'clamp(64px, 15vw, 88px)',
-                    borderRadius: '50%',
-                    background: isRecording ? 'rgba(20,184,166,0.12)' : 'rgba(0,0,0,0.04)',
-                    border: `1.5px solid ${isRecording ? 'var(--teal)' : 'rgba(0,0,0,0.15)'}`,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    cursor: 'pointer',
-                    boxShadow: isRecording ? '0 0 32px rgba(20,184,166,0.2)' : 'none',
-                    transition: 'all 0.3s ease',
-                    position: 'relative',
-                    zIndex: 1,
-                    outline: 'none',
-                  }}
-                  onFocus={(e) => {
-                    e.currentTarget.style.boxShadow = '0 0 0 2px var(--teal)';
-                  }}
-                  onBlur={(e) => {
-                    e.currentTarget.style.boxShadow = isRecording ? '0 0 32px rgba(20,184,166,0.2)' : 'none';
-                  }}
-                >
-                  <Mic size={24} style={{ color: isRecording ? 'var(--teal)' : 'rgba(0,0,0,0.35)' }} />
-                </motion.button>
-
-                {/* Waveform Visualizer */}
-                <WaveformVisualizer isRecording={isRecording} />
-              </div>
-
-              <div style={{ textAlign: 'center' }}>
-                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 'clamp(9px, 2vw, 11px)', color: isRecording ? 'var(--teal)' : 'var(--text-secondary)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 'clamp(2px, 0.5vw, 4px)' }}>
-                  {isRecording ? '◉ Recording — Click to stop' : '○ Click to begin audit'}
-                </div>
-                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 'clamp(8px, 1.5vw, 10px)', color: 'var(--text-secondary)', letterSpacing: '0.06em' }}>
-                  Speak naturally in your regional dialect
-                </div>
-              </div>
-
-              {!isRecording && (
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'clamp(8px, 2vw, 12px)', marginTop: 'clamp(8px, 2vw, 12px)' }}>
-                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 'clamp(12px, 2.5vw, 14px)', fontWeight: 'bold', padding: 'clamp(12px, 3vw, 16px) 0', color: 'var(--text-secondary)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
-                    — OR —
-                  </div>
-                  <input
-                    type="file"
-                    accept=".mp3,.wav,.m4a,audio/mp3,audio/wav,audio/m4a,audio/x-m4a"
-                    style={{ display: 'none' }}
-                    ref={fileInputRef}
-                    onChange={handleFileUpload}
-                  />
-                  <button
-                    onClick={() => fileInputRef.current?.click()}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 'clamp(4px, 1vw, 8px)',
-                      padding: 'clamp(6px, 1.5vw, 8px) clamp(10px, 2vw, 16px)',
-                      background: 'rgba(0,0,0,0.03)',
-                      border: '1px solid rgba(0,0,0,0.08)',
-                      borderRadius: 6,
-                      color: 'var(--text-secondary)',
-                      fontFamily: 'var(--font-mono)',
-                      fontSize: 'clamp(8px, 1.5vw, 10px)',
-                      letterSpacing: '0.04em',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s ease',
-                      outline: 'none',
-                    }}
-                    onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(0,0,0,0.15)'; e.currentTarget.style.color = 'var(--text-primary)'; }}
-                    onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(0,0,0,0.08)'; e.currentTarget.style.color = 'var(--text-secondary)'; }}
-                    onFocus={(e) => { e.currentTarget.style.boxShadow = '0 0 0 2px var(--teal)'; }}
-                    onBlur={(e) => { e.currentTarget.style.boxShadow = 'none'; }}
-                  >
-                    <Upload size={12} />
-                    Upload Audio
-                  </button>
-                </div>
-              )}
             </motion.div>
           )}
         </AnimatePresence>
@@ -2098,8 +2020,6 @@ export default function Home() {
           ))}
         </div>
       </footer>
-      {/* Hidden Official PDF layout */}
-      <OfficialPdfReport auditData={auditData} repairData={repairData} />
     </main>
   );
 }
