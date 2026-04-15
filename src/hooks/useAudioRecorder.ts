@@ -1,6 +1,8 @@
 import { useState, useRef, useCallback } from 'react';
 
 // ─── Mock audit data for demo/testing ────────────────────────────────────────
+const DEMO_ACCENT_IDENTIFIED = 'Hindi';
+
 const MOCK_AUDIT_DATA = {
   transcript: "I'm speaking in my regional dialect and the system should capture my authentic phonetic patterns.",
   word_risks: [
@@ -12,7 +14,7 @@ const MOCK_AUDIT_DATA = {
     { word: "phonetic", risk: 0.12, language: "en" },
   ],
   audit: {
-    accent_identified: "Northeast Indian / Assamese-influenced English",
+    accent_identified: DEMO_ACCENT_IDENTIFIED,
     features: "retroflex consonants, vowel substitution /ə/ → /ɪ/, non-syllabic nasals",
     potential_bias_analysis: "Standard ASR models would penalize retroflex /ḍ/ sounds and compress vowel space, leading to 40% lower confidence scores than General American English speakers.",
   },

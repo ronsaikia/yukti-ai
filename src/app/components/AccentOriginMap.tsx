@@ -1,11 +1,14 @@
 'use client';
 
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 
 // ─── Geographic Data ───────────────────────────────────────────────────────────
 
 interface RegionConfig {
   center: { lat: number; lng: number };
+  marker?: { x: number; y: number };
+  markerLabelOffset?: { x: number; y: number };
   zoom: number;
   label: string;
   region: string;
@@ -16,6 +19,8 @@ interface RegionConfig {
 const REGION_CONFIG: Record<string, RegionConfig> = {
   northeast: {
     center: { lat: 26.1445, lng: 91.7362 },
+    marker: { x: 190, y: 100 },
+    markerLabelOffset: { x: 16, y: -14 },
     zoom: 5.5,
     label: 'Guwahati',
     region: 'Northeast India',
@@ -23,6 +28,7 @@ const REGION_CONFIG: Record<string, RegionConfig> = {
   },
   bengal: {
     center: { lat: 22.5726, lng: 88.3639 },
+    marker: { x: 248, y: 149 },
     zoom: 6,
     label: 'Kolkata',
     region: 'West Bengal',
@@ -30,6 +36,7 @@ const REGION_CONFIG: Record<string, RegionConfig> = {
   },
   tamil: {
     center: { lat: 13.0827, lng: 80.2707 },
+    marker: { x: 176, y: 314 },
     zoom: 6,
     label: 'Chennai',
     region: 'Tamil Nadu',
@@ -37,6 +44,7 @@ const REGION_CONFIG: Record<string, RegionConfig> = {
   },
   hindi: {
     center: { lat: 26.8467, lng: 80.9462 },
+    marker: { x: 132, y: 112 },
     zoom: 5,
     label: 'Lucknow',
     region: 'North India',
@@ -44,6 +52,7 @@ const REGION_CONFIG: Record<string, RegionConfig> = {
   },
   punjab: {
     center: { lat: 31.6340, lng: 74.8723 },
+    marker: { x: 82, y: 88 },
     zoom: 6,
     label: 'Amritsar',
     region: 'Punjab & Haryana',
@@ -51,6 +60,7 @@ const REGION_CONFIG: Record<string, RegionConfig> = {
   },
   maharashtra: {
     center: { lat: 19.0760, lng: 72.8777 },
+    marker: { x: 92, y: 220 },
     zoom: 5.5,
     label: 'Mumbai',
     region: 'Maharashtra',
@@ -58,6 +68,7 @@ const REGION_CONFIG: Record<string, RegionConfig> = {
   },
   telugu: {
     center: { lat: 17.3850, lng: 78.4867 },
+    marker: { x: 167, y: 220 },
     zoom: 5.5,
     label: 'Hyderabad',
     region: 'Andhra Pradesh',
@@ -65,6 +76,7 @@ const REGION_CONFIG: Record<string, RegionConfig> = {
   },
   karnataka: {
     center: { lat: 12.9716, lng: 77.5946 },
+    marker: { x: 137, y: 255 },
     zoom: 5.5,
     label: 'Bengaluru',
     region: 'Karnataka',
@@ -72,6 +84,7 @@ const REGION_CONFIG: Record<string, RegionConfig> = {
   },
   kerala: {
     center: { lat: 8.5241, lng: 76.9366 },
+    marker: { x: 133, y: 318 },
     zoom: 6.5,
     label: 'Kochi',
     region: 'Kerala',
@@ -79,6 +92,7 @@ const REGION_CONFIG: Record<string, RegionConfig> = {
   },
   gujarat: {
     center: { lat: 23.0225, lng: 72.5714 },
+    marker: { x: 62, y: 170 },
     zoom: 5.5,
     label: 'Ahmedabad',
     region: 'Gujarat',
@@ -86,6 +100,7 @@ const REGION_CONFIG: Record<string, RegionConfig> = {
   },
   odisha: {
     center: { lat: 20.2961, lng: 85.8245 },
+    marker: { x: 195, y: 188 },
     zoom: 6,
     label: 'Bhubaneswar',
     region: 'Odisha',
@@ -93,6 +108,7 @@ const REGION_CONFIG: Record<string, RegionConfig> = {
   },
   delhi: {
     center: { lat: 28.6139, lng: 77.2090 },
+    marker: { x: 105, y: 100 },
     zoom: 6,
     label: 'New Delhi',
     region: 'Delhi NCR',
@@ -203,6 +219,7 @@ function isWorldRegion(region: string): boolean {
 function IndiaRegionMap({ regionKey }: { regionKey: string }) {
   const config = REGION_CONFIG[regionKey] || REGION_CONFIG.delhi;
   const isNortheast = regionKey === 'northeast';
+  const [isInfoCollapsed, setIsInfoCollapsed] = useState(false);
 
   // Get states to display
   const primaryStates = config.states;
@@ -318,12 +335,34 @@ function IndiaRegionMap({ regionKey }: { regionKey: string }) {
 
           {/* Region info panel */}
           <g transform="translate(20, 20)">
-            <rect x="-8" y="-4" width="140" height="52" fill="white" rx="6" opacity="0.95" stroke="#14b8a6" strokeWidth={0.5} />
-            <text x="0" y="10" fontSize="9" fontFamily="var(--font-mono)" fill="#14b8a6" fontWeight="600">{config.region}</text>
-            <text x="0" y="24" fontSize="8" fontFamily="var(--font-mono)" fill="#666">{config.label}</text>
-            <text x="0" y="38" fontSize="7" fontFamily="var(--font-mono)" fill="#999">
-              {config.center.lat.toFixed(2)}°N, {config.center.lng.toFixed(2)}°E
-            </text>
+            <rect
+              x="-8"
+              y="-4"
+              width="140"
+              height={isInfoCollapsed ? 20 : 52}
+              fill="white"
+              rx="6"
+              opacity="0.95"
+              stroke="#14b8a6"
+              strokeWidth={0.5}
+            />
+            <g
+              onClick={() => setIsInfoCollapsed((prev) => !prev)}
+              style={{ cursor: 'pointer' }}
+            >
+              <text x="0" y="10" fontSize="9" fontFamily="var(--font-mono)" fill="#14b8a6" fontWeight="600">{config.region}</text>
+              <text x="122" y="10" textAnchor="end" fontSize="10" fontFamily="var(--font-mono)" fill="#14b8a6" fontWeight="700">
+                {isInfoCollapsed ? '+' : '-'}
+              </text>
+            </g>
+            {!isInfoCollapsed && (
+              <>
+                <text x="0" y="24" fontSize="8" fontFamily="var(--font-mono)" fill="#666">{config.label}</text>
+                <text x="0" y="38" fontSize="7" fontFamily="var(--font-mono)" fill="#999">
+                  {config.center.lat.toFixed(2)}°N, {config.center.lng.toFixed(2)}°E
+                </text>
+              </>
+            )}
           </g>
 
           {/* Border */}
@@ -432,7 +471,11 @@ function getNeighboringStates(states: string[]): string[] {
 
 // Location marker component
 function RegionMarker({ config }: { config: RegionConfig }) {
-  const pos = mapLatLngToSvg(config.center.lat, config.center.lng);
+  const pos = config.marker ?? mapLatLngToSvg(config.center.lat, config.center.lng);
+  const labelWidth = 70;
+  const autoLabelOffsetX = pos.x > 300 - (labelWidth + 16) ? -(labelWidth + 12) : 12;
+  const labelOffsetX = config.markerLabelOffset?.x ?? autoLabelOffsetX;
+  const labelOffsetY = config.markerLabelOffset?.y ?? -5;
 
   return (
     <g transform={`translate(${pos.x}, ${pos.y})`}>
@@ -452,7 +495,7 @@ function RegionMarker({ config }: { config: RegionConfig }) {
       {/* Core marker */}
       <circle r={7} fill="#14b8a6" stroke="white" strokeWidth={2.5} />
       {/* Label */}
-      <g transform="translate(12, -5)">
+      <g transform={`translate(${labelOffsetX}, ${labelOffsetY})`}>
         <rect x="0" y="-10" width="70" height="20" rx="4" fill="white" stroke="#14b8a6" strokeWidth={0.5} opacity="0.95" />
         <text x="35" y="0" textAnchor="middle" dominantBaseline="middle" fontSize="8" fontFamily="var(--font-mono)" fill="#1a1a1a" fontWeight="600">
           {config.label}
@@ -675,22 +718,24 @@ export function AccentMapStyles() {
 
       .map-container {
         width: 100%;
-        max-width: 340px;
+        max-width: 360px;
         margin: 0 auto;
-        border: 1px solid rgba(100,120,140,0.15);
+        border: 1px solid #14b8a6;
         border-radius: 12px;
         overflow: hidden;
         background: linear-gradient(180deg, #f8fafb 0%, #f0f4f8 100%);
-        box-shadow:
-          0 2px 8px rgba(0,0,0,0.04),
-          0 4px 16px rgba(0,0,0,0.02),
-          inset 0 1px 0 rgba(255,255,255,0.8);
       }
 
       .region-svg {
         width: 100%;
         height: auto;
         display: block;
+      }
+
+      @media (min-width: 1024px) {
+        .map-container {
+          max-width: 390px;
+        }
       }
 
       .sister-states-indicator {
@@ -846,10 +891,15 @@ export function AccentMapStyles() {
       @media (max-width: 768px) {
         .map-container {
           max-width: 100%;
+          border-radius: 10px;
         }
 
         .region-svg {
-          max-height: 320px;
+          max-height: none;
+        }
+
+        .map-header {
+          gap: 8px;
         }
       }
 
@@ -859,7 +909,15 @@ export function AccentMapStyles() {
         }
 
         .region-svg {
-          max-height: 280px;
+          max-height: none;
+        }
+
+        .map-header {
+          flex-wrap: wrap;
+        }
+
+        .map-badge {
+          margin-left: auto;
         }
       }
 

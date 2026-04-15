@@ -1212,6 +1212,7 @@ function EquityReport({ auditData }: { auditData: AuditData }) {
         .audit-content-grid {
           display: grid;
           grid-template-columns: 1fr 1fr;
+          align-items: stretch;
           gap: 24px;
           margin-bottom: 28px;
         }
@@ -1225,6 +1226,16 @@ function EquityReport({ auditData }: { auditData: AuditData }) {
         .audit-map-section,
         .audit-bias-section {
           min-width: 0;
+          height: 100%;
+        }
+
+        .audit-bias-section {
+          display: flex;
+          flex-direction: column;
+        }
+
+        .audit-bias-section .bias-mitigation-summary {
+          flex: 1;
         }
 
         .section-title {

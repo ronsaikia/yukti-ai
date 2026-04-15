@@ -27,6 +27,7 @@
 
 html {
   scroll-behavior: smooth;
+  overflow-x: hidden;
 }
 
 body {
@@ -37,6 +38,7 @@ body {
   -moz-osx-font-smoothing: grayscale;
   padding: 0;
   margin: 0;
+  overflow-x: hidden;
 }
 
 /* Responsive breakpoints */
@@ -206,7 +208,6 @@ body {
   * {
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
-    color-adjust: exact !important;
   }
 
   body {
@@ -662,6 +663,7 @@ body {
 .audit-content-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
+  align-items: stretch;
   gap: 24px;
   margin-bottom: 24px;
 }
@@ -669,6 +671,16 @@ body {
 .audit-map-section,
 .audit-bias-section {
   min-width: 0;
+  height: 100%;
+}
+
+.audit-bias-section {
+  display: flex;
+  flex-direction: column;
+}
+
+.audit-bias-section .bias-mitigation-summary {
+  flex: 1;
 }
 
 .section-title {
@@ -819,7 +831,8 @@ body {
   }
 
   .metrics-row {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
   }
 
   .audit-branding-row {
@@ -830,7 +843,23 @@ body {
 
 @media (max-width: 480px) {
   .metrics-row {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    margin-bottom: 20px;
+  }
+
+  .metric-card {
+    padding: 12px;
+  }
+
+  .metric-value {
+    font-size: 22px;
+    margin-bottom: 6px;
+  }
+
+  .metric-label {
+    font-size: 8px;
+    margin-bottom: 6px;
   }
 
   .audit-main-title {
