@@ -5,7 +5,7 @@ import { callGeminiWithMultiKeyFallback } from '@/lib/gemini';
 // In-memory cache for health check
 let lastHealthResult: any = null;
 let lastHealthTimestamp = 0;
-const HEALTH_CACHE_TTL_MS = 60 * 5000; // 1 minute
+const HEALTH_CACHE_TTL_MS = 60 * 5000; // 5 minute
 
 export async function GET() {
   const now = Date.now();
