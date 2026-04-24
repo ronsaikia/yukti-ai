@@ -1,17 +1,12 @@
 import { NextResponse } from 'next/server';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { callGeminiWithMultiKeyFallback } from '@/lib/gemini';
 
 export async function GET() {
   const startTime = Date.now();
 
   try {
-    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY as string);
-    const model = genAI.getGenerativeModel({
-      model: 'gemini-2.5-flash'
-    });
-
     // Send minimal test prompt to measure actual latency
-    const result = await model.generateContent({
+    const text = await callGeminiWithMultiKeyFallback({
       contents: [{
         role: 'user',
         parts: [{ text: 'ping' }]
@@ -21,13 +16,10 @@ export async function GET() {
       }
     });
 
-    const response = await result.response;
-    const text = response.text().toLowerCase().trim();
-
     const latencyMs = Date.now() - startTime;
 
     // Check if we got a reasonable response (pong or similar)
-    const isHealthy = text.includes('pong') || text.length > 0;
+    const isHealthy = text.toLowerCase().trim().includes('pong') || text.length > 0;
 
     return NextResponse.json({
       status: isHealthy ? 'ok' : 'degraded',

@@ -3,8 +3,8 @@
 // Security: No persistent storage of user audio - all processing happens in-memory
 
 import { NextResponse } from 'next/server';
-import { GoogleGenerativeAI } from '@google/generative-ai';
 import { SpeechClient } from '@google-cloud/speech';
+import { callGeminiWithMultiKeyFallback } from '@/lib/gemini';
 
 interface AuditData {
   transcript?: string;
@@ -32,33 +32,6 @@ interface AuditData {
   };
 }
 
-const fetchWithRetry = async (
-  model: ReturnType<GoogleGenerativeAI['getGenerativeModel']>,
-  requestConfig: Parameters<ReturnType<GoogleGenerativeAI['getGenerativeModel']>['generateContent']>[0],
-  retries = 3,
-  delay = 1000,
-  emit?: (payload: unknown) => void
-) => {
-  for (let i = 0; i < retries; i++) {
-    try {
-      return await model.generateContent(requestConfig);
-    } catch (error: unknown) {
-      const err = error as { status?: number; message?: string };
-      if (err.status === 503 && i < retries - 1) {
-        console.warn(`503 Error. Retrying in ${delay}ms... (Attempt ${i + 1} of ${retries})`);
-        // Emit retry event
-        if (emit) {
-          emit({ type: 'retry', attempt: i + 1, maxRetries: retries, delayMs: delay });
-        }
-        await new Promise(res => setTimeout(res, delay));
-        delay *= 2;
-      } else {
-        throw error;
-      }
-    }
-  }
-  throw new Error('Max retries reached');
-};
 
 // Initialize Speech client with credentials from environment variable
 const getSpeechClient = (): SpeechClient | null => {
@@ -165,13 +138,6 @@ export async function POST(request: Request) {
 
         emit({ type: 'stage', stage: 2 });
 
-        const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY as string);
-        const model = genAI.getGenerativeModel({
-          model: 'gemini-2.5-flash'
-        });
-
-        emit({ type: 'stage', stage: 3 });
-
         const auditPrompt = `You are an AI Linguistic Justice auditor (SDG 10). Your objective is to analyze the provided audio transcript for accent and language bias, specifically English , Hindi , and Assamese, including complex code switching scenarios.
 
 ${chirpSuccess ? `Initial Speech-to-Text Transcript (Vertex AI Chirp): "${chirpTranscript}"
@@ -213,11 +179,7 @@ Return nothing else. No markdown, no explanation.`;
           generationConfig: { responseMimeType: 'application/json' }
         };
 
-        emit({ type: 'stage', stage: 3, meta: { model: 'gemini-2.5-flash', provider: 'vertex-ai' } });
-
-        const fetchResult = await fetchWithRetry(model, requestConfig, 3, 1000, emit);
-        const responseText = await fetchResult.response;
-        const text = responseText.text();
+        const text = await callGeminiWithMultiKeyFallback(requestConfig);
 
         let jsonResult: AuditData;
         try {

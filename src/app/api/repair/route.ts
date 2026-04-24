@@ -1,28 +1,6 @@
 import { NextResponse } from 'next/server';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { callGeminiWithMultiKeyFallback } from '@/lib/gemini';
 
-const fetchWithRetry = async (
-  model: ReturnType<GoogleGenerativeAI['getGenerativeModel']>,
-  requestConfig: Parameters<ReturnType<GoogleGenerativeAI['getGenerativeModel']>['generateContent']>[0],
-  retries = 3,
-  delay = 1000
-) => {
-  for (let i = 0; i < retries; i++) {
-    try {
-      return await model.generateContent(requestConfig);
-    } catch (error: unknown) {
-      const err = error as { status?: number; message?: string };
-      if (err.status === 503 && i < retries - 1) {
-        console.warn(`503 Error. Retrying in ${delay}ms... (Attempt ${i + 1} of ${retries})`);
-        await new Promise(res => setTimeout(res, delay));
-        delay *= 2;
-      } else {
-        throw error;
-      }
-    }
-  }
-  throw new Error('Max retries reached');
-};
 
 export async function POST(request: Request) {
   try {
@@ -34,11 +12,6 @@ export async function POST(request: Request) {
         { status: 400 }
       );
     }
-
-    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY as string);
-    const model = genAI.getGenerativeModel({
-      model: 'gemini-2.5-flash'
-    });
 
     const repairPrompt = `You are a linguistic justice expert. Your task is to generate a contextual repair that neutralizes accent-based bias in speech recognition systems.
 
@@ -69,9 +42,7 @@ Return nothing else. No markdown, no explanation.`;
       generationConfig: { responseMimeType: 'application/json' }
     };
 
-    const fetchResult = await fetchWithRetry(model, requestConfig);
-    const responseText = await fetchResult.response;
-    const text = responseText.text();
+    const text = await callGeminiWithMultiKeyFallback(requestConfig);
 
     let jsonResult: { original: string; repaired: string; explanation: string };
     try {
