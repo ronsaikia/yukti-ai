@@ -9,8 +9,8 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
  */
 export async function callGeminiWithMultiKeyFallback(
   requestConfig: Parameters<ReturnType<GoogleGenerativeAI['getGenerativeModel']>['generateContent']>[0],
-  isVisionMode?: boolean,
-  pdfBase64?: string
+  _isVisionMode?: boolean,
+  _pdfBase64?: string
 ): Promise<string> {
   // Collect API keys from environment variables
   const apiKeys = [
@@ -18,15 +18,13 @@ export async function callGeminiWithMultiKeyFallback(
     process.env.GEMINI_API_KEY_2,
     process.env.GEMINI_API_KEY_3
   ]
-    .filter((key): key is string => key !== undefined && key !== '')
-    .map(key => key.trim());
+    .filter((key): key is string => !!key && key.trim() !== '')
+    .map((key) => key.trim());
 
-  // Fallback to single key if no numbered keys are set
+  // Fallback to single key
   if (apiKeys.length === 0) {
     const singleKey = process.env.GEMINI_API_KEY;
-    if (singleKey && singleKey !== '') {
-      apiKeys.push(singleKey.trim());
-    }
+    if (singleKey?.trim()) apiKeys.push(singleKey.trim());
   }
 
   if (apiKeys.length === 0) {
@@ -36,62 +34,80 @@ export async function callGeminiWithMultiKeyFallback(
   // Rate-limit/quota error indicators
   const isRateLimitError = (error: unknown): boolean => {
     const err = error as { status?: number; message?: string };
-    const message = err.message?.toLowerCase() || '';
+    const message = err.message?.toLowerCase() ?? '';
     return (
       err.status === 429 ||
       err.status === 503 ||
       message.includes('quota') ||
       message.includes('rate limit') ||
       message.includes('too many requests') ||
-      message.includes('resource exhausted')
+      message.includes('resource exhausted') ||
+      message.includes('service unavailable')
     );
   };
 
-  // Try each key with retries
-  for (let keyIndex = 0; keyIndex < apiKeys.length; keyIndex++) {
-    const apiKey = apiKeys[keyIndex];
+  /**
+   * Exponential backoff with jitter.
+   * attempt 0 → ~5s, attempt 1 → ~10s, attempt 2 → ~20s
+   * Capped at 30s. Adding ±20% jitter prevents thundering herd.
+   */
+  const backoffMs = (attempt: number): number => {
+    const base = Math.min(5000 * Math.pow(2, attempt), 30_000);
+    const jitter = base * 0.2 * (Math.random() * 2 - 1); // ±20%
+    return Math.round(base + jitter);
+  };
 
-    // Initialize model for this key
-    const genAI = new GoogleGenerativeAI(apiKey);
+  const MAX_ATTEMPTS_PER_KEY = 3;
+
+  for (let keyIndex = 0; keyIndex < apiKeys.length; keyIndex++) {
+    const genAI = new GoogleGenerativeAI(apiKeys[keyIndex]);
     const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
-    // Allow max 2 retries per key (total 3 attempts: initial + 2 retries)
-    for (let attempt = 0; attempt < 3; attempt++) {
+    for (let attempt = 0; attempt < MAX_ATTEMPTS_PER_KEY; attempt++) {
       try {
         const result = await model.generateContent(requestConfig);
         const response = await result.response;
         const text = response.text();
 
-        if (!text || text.trim() === '') {
-          throw new Error('Empty response from Gemini API');
-        }
-
+        if (!text?.trim()) throw new Error('Empty response from Gemini API');
         return text;
+
       } catch (error: unknown) {
-        // If this is not a rate-limit error, do not retry on the same key. Move to the next key.
-        if (!isRateLimitError(error)) {
-          console.warn(`Key ${keyIndex + 1} encountered a non-rate-limit error. Trying next key...`, error);
+        const isQuota = isRateLimitError(error);
+
+        if (!isQuota) {
+          // Non-quota error (bad request, auth, etc.) — skip to next key immediately
+          console.warn(`Key ${keyIndex + 1} non-quota error, skipping key:`, (error as Error).message);
           break;
         }
 
-        // If it's the last attempt for this key, break to try the next key
-        if (attempt === 2) {
-          console.warn(`Key ${keyIndex + 1} exhausted after 3 attempts. Trying next key...`);
-          break;
+        const isLastAttempt = attempt === MAX_ATTEMPTS_PER_KEY - 1;
+        const isLastKey = keyIndex === apiKeys.length - 1;
+
+        if (isLastAttempt) {
+          console.warn(`Key ${keyIndex + 1} exhausted all ${MAX_ATTEMPTS_PER_KEY} attempts.`);
+          break; // Move to next key
         }
 
-        // Calculate delay: 500ms for first retry, 1000ms for second retry
-        const delayMs = attempt === 0 ? 500 : 1000;
-        await new Promise(resolve => setTimeout(resolve, delayMs));
+        const delay = backoffMs(attempt);
+        console.warn(
+          `Key ${keyIndex + 1} quota hit (attempt ${attempt + 1}/${MAX_ATTEMPTS_PER_KEY}). ` +
+          `Waiting ${Math.round(delay / 1000)}s before retry...`
+        );
+
+        // Emit a retryInfo-compatible signal via a custom error property so the
+        // route handler can stream it to the client (see Phase 2)
+        if (!isLastKey || !isLastAttempt) {
+          await new Promise((resolve) => setTimeout(resolve, delay));
+        }
       }
     }
 
-    // Wait 500ms before trying next key (except after the last key)
+    // Pause between keys to avoid hammering Google from the same IP
     if (keyIndex < apiKeys.length - 1) {
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await new Promise((resolve) => setTimeout(resolve, 2_000));
     }
   }
 
-  // If we get here, all keys failed due to rate limits/quotas
-  throw new Error('All Gemini API keys failed due to rate limits or quotas');
+  throw new Error('All Gemini API keys are rate-limited or exhausted. Please try again in a few minutes.');
 }
